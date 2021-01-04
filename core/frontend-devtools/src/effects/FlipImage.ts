@@ -6,7 +6,7 @@
  * @module Effects
  */
 
-import { ScreenSpaceEffectBuilder, Tool, UniformType, VaryingType } from "@bentley/imodeljs-frontend";
+import { ScreenSpaceEffectBuilder, Tool } from "@bentley/imodeljs-frontend";
 import { parseArgs } from "../tools/parseArgs";
 import { AddEffectTool, redrawSelectedView } from "./EffectTools";
 
@@ -61,22 +61,22 @@ export class FlipImageEffect extends AddEffectTool {
     builder.shouldApply = (_context) => flipHorizontal || flipVertical || flipColor;
 
     // Define the varying for the texture coordinate.
-    builder.addVarying("v_uv", VaryingType.Vec2);
+    builder.addVarying("v_uv", "vec2");
 
     // Hook up the uniforms.
     builder.addUniform({
       name: "u_flipHorizontal",
-      type: UniformType.Bool,
+      type: "bool",
       bind: (uniform, _context) => uniform.setUniform1i(flipHorizontal ? 1 : 0),
     });
     builder.addUniform({
       name: "u_flipVertical",
-      type: UniformType.Bool,
+      type: "bool",
       bind: (uniform, _context) => uniform.setUniform1i(flipVertical ? 1 : 0),
     });
     builder.addUniform({
       name: "u_flipColor",
-      type: UniformType.Bool,
+      type: "bool",
       bind: (uniform, _context) => uniform.setUniform1i(flipColor ? 1 : 0),
     });
   }

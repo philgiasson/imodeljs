@@ -10,7 +10,7 @@ import { VaryingType } from "../effects/VaryingType";
 import {
   ParticleEffectBuilder, ParticleEffectBuilderParams, ParticlePropertyParams, ParticleUniformArrayParams, ParticleUniformParams,
 } from "../effects/ParticleEffectBuilder";
-import { getUniformVariableType, getVaryingVariableType } from "./EffectBuilder";
+import { getEffectVariableType } from "./EffectBuilder";
 
 import { System } from "./System";
 

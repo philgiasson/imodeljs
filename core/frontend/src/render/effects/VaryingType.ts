@@ -10,13 +10,4 @@
  * @see [[ScreenSpaceEffectBuilder.addVarying]] to define a varying variable for a screen-space effect shader.
  * @beta
  */
-export enum VaryingType {
-  /** GLSL `float`. */
-  Float,
-  /** GLSL `vec2`. */
-  Vec2,
-  /** GLSL `vec3`. */
-  Vec3,
-  /** GLSL `vec4`. */
-  Vec4,
-}
+export type VaryingType = "float" | "vec2" | "vec3" | "vec4";

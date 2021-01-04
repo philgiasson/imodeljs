@@ -20,7 +20,7 @@ import { getDrawParams } from "./ScratchDrawParams";
 import { SingularTechnique } from "./Technique";
 import { Target } from "./Target";
 import { System } from "./System";
-import { getUniformVariableType, getVaryingVariableType } from "./EffectBuilder";
+import { getEffectVariableType } from "./EffectBuilder";
 import { createScreenSpaceEffectProgramBuilder } from "./glsl/ScreenSpaceEffect";
 
 type ShouldApply = (context: ScreenSpaceEffectContext) => boolean;
@@ -44,7 +44,7 @@ class Builder {
 
   public addUniform(params: UniformParams): void {
     const name = params.name;
-    const type = getUniformVariableType(params.type);
+    const type = getEffectVariableType(params.type);
     const bind = params.bind;
 
     this._builder.addUniform(name, type, (prog: ShaderProgram) => {
@@ -56,7 +56,7 @@ class Builder {
 
   public addUniformArray(params: UniformArrayParams): void {
     const { name, bind, length } = { ...params };
-    const type = getUniformVariableType(params.type);
+    const type = getEffectVariableType(params.type);
     this._builder.addUniformArray(name, type, length, (prog) => {
       prog.addProgramUniform(name, (uniform, progParams) => {
         bind(uniform, progParams.target.screenSpaceEffectContext);
@@ -65,7 +65,7 @@ class Builder {
   }
 
   public addVarying(name: string, type: VaryingType): void {
-    this._builder.addVarying(name, getVaryingVariableType(type));
+    this._builder.addVarying(name, getEffectVariableType(type));
   }
 
   public finish(): void {

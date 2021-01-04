@@ -6,7 +6,7 @@
  * @module Effects
  */
 
-import { ScreenSpaceEffectBuilder, UniformType, VaryingType } from "@bentley/imodeljs-frontend";
+import { ScreenSpaceEffectBuilder } from "@bentley/imodeljs-frontend";
 import { AddEffectTool } from "./EffectTools";
 
 /** Adds one of a collection of "convolution kernels" that alter a [Viewport]($frontend)'s image by blending neighboring pixels.
@@ -49,13 +49,13 @@ export abstract class ConvolutionEffect extends AddEffectTool {
 
   protected defineEffect(builder: ScreenSpaceEffectBuilder): void {
     // Define the varying for the texture coordinate.
-    builder.addVarying("v_texCoord", VaryingType.Vec2);
+    builder.addVarying("v_texCoord", "vec2");
 
     // Hook up the uniforms.
     const matrix = this.matrix;
     builder.addUniform({
       name: "u_textureSize",
-      type: UniformType.Vec2,
+      type: "vec2",
       bind: (uniform, context) => {
         const rect = context.viewport.viewRect;
         uniform.setUniform2fv([ rect.width, rect.height ]);
@@ -63,7 +63,7 @@ export abstract class ConvolutionEffect extends AddEffectTool {
     });
     builder.addUniformArray({
       name: "u_kernel",
-      type: UniformType.Float,
+      type: "float",
       length: matrix.length,
       bind: (uniform) => uniform.setUniform1fv(matrix),
     });
@@ -74,7 +74,7 @@ export abstract class ConvolutionEffect extends AddEffectTool {
 
     builder.addUniform({
       name: "u_kernelWeight",
-      type: UniformType.Float,
+      type: "float",
       bind: (uniform) => uniform.setUniform1f(weight),
     });
   }

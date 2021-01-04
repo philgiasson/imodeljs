@@ -5,9 +5,7 @@
 
 import { expect } from "chai";
 import { ColorDef } from "@bentley/imodeljs-common";
-import {
-  IModelApp, Pixel, SnapshotConnection, VaryingType,
-} from "@bentley/imodeljs-frontend";
+import { IModelApp, Pixel, SnapshotConnection } from "@bentley/imodeljs-frontend";
 import { Color, TestViewport, testViewports } from "../TestViewport";
 
 describe("Screen-space effects", () => {
@@ -52,7 +50,7 @@ describe("Screen-space effects", () => {
     expect(builder).not.to.be.undefined;
 
     builder.shouldApply = () => disabledEffectName !== name;
-    builder.addVarying("v_texCoord", VaryingType.Vec2);
+    builder.addVarying("v_texCoord", "vec2");
 
     builder.finish();
   }
@@ -87,7 +85,7 @@ describe("Screen-space effects", () => {
       },
     })!;
 
-    builder.addVarying("v_texCoord", VaryingType.Vec2);
+    builder.addVarying("v_texCoord", "vec2");
     builder.finish();
   }
 

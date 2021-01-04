@@ -13,20 +13,7 @@ import { Viewport } from "../../Viewport";
  * @see [[Uniform]] to set the value of a uniform variable.
  * @beta
  */
-export enum UniformType {
-  /** GLSL `bool`. */
-  Bool,
-  /** GLSL `int`. */
-  Int,
-  /** GLSL `float`. */
-  Float,
-  /** GLSL `vec2`. */
-  Vec2,
-  /** GLSL `vec3`. */
-  Vec3,
-  /** GLSL `vec4`. */
-  Vec4,
-}
+export type UniformType = "bool" | "int" | "float" | "vec2" | "vec3" | "vec4";
 
 /** Represents a uniform variable in a shader program used by a custom effect shader, providing methods for setting the current value of the uniform.
  * @see [[UniformParams.bind]].

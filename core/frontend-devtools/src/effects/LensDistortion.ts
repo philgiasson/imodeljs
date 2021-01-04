@@ -7,7 +7,7 @@
  */
 
 import { assert } from "@bentley/bentleyjs-core";
-import { ScreenSpaceEffectBuilder, Tool, UniformType, VaryingType } from "@bentley/imodeljs-frontend";
+import { ScreenSpaceEffectBuilder, Tool } from "@bentley/imodeljs-frontend";
 import { AddEffectTool, redrawSelectedView } from "./EffectTools";
 import { parseArgs } from "../tools/parseArgs";
 
@@ -59,27 +59,27 @@ export class LensDistortionEffect extends AddEffectTool {
     // Lens distortion is only applicable to views with the camera enabled.
     builder.shouldApply = (context) => context.viewport.isCameraOn;
 
-    builder.addVarying("vUV", VaryingType.Vec3);
-    builder.addVarying("vUVDot", VaryingType.Vec2);
+    builder.addVarying("vUV", "vec3");
+    builder.addVarying("vUVDot", "vec2");
 
     builder.addUniform({
       name: "strength",
-      type: UniformType.Float,
+      type: "float",
       bind: (uniform) => uniform.setUniform1f(LensDistortionConfig.strength),
     });
     builder.addUniform({
       name: "cylindricalRatio",
-      type: UniformType.Float,
+      type: "float",
       bind: (uniform) => uniform.setUniform1f(LensDistortionConfig.cylindricalRatio),
     });
     builder.addUniform({
       name: "aspectRatio",
-      type: UniformType.Float,
+      type: "float",
       bind: (uniform, context) => uniform.setUniform1f(context.viewport.viewRect.aspect),
     });
     builder.addUniform({
       name: "height",
-      type: UniformType.Float,
+      type: "float",
       bind: (uniform, context) => {
         assert(context.viewport.view.isCameraEnabled());
         const fov = context.viewport.view.camera.lens.radians;

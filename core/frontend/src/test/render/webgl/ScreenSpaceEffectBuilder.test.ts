@@ -5,8 +5,6 @@
 
 import { expect } from "chai";
 import { IModelApp } from "../../../IModelApp";
-import { UniformType } from "../../../render/effects/Uniform";
-import { VaryingType } from "../../../render/effects/VaryingType";
 import { ScreenSpaceEffectBuilder, ScreenSpaceEffectBuilderParams } from "../../../render/effects/ScreenSpaceEffectBuilder";
 import { System } from "../../../render/webgl/System";
 
@@ -39,7 +37,7 @@ describe("ScreenSpaceEffectBuilder", () => {
 
   function addUniform(builder: ScreenSpaceEffectBuilder) {
     builder.addUniform({
-      type: UniformType.Vec4,
+      type: "vec4",
       name: "u_color",
       bind: (uniform, _context) => {
         uniform.setUniform4fv([1, 0, 0.5, 1]);
@@ -48,7 +46,7 @@ describe("ScreenSpaceEffectBuilder", () => {
   }
 
   function addVarying(builder: ScreenSpaceEffectBuilder) {
-    builder.addVarying("v_color", VaryingType.Vec4);
+    builder.addVarying("v_color", "vec4");
   }
 
   function makeBuilder(name: string): ScreenSpaceEffectBuilder {
@@ -97,17 +95,17 @@ describe("ScreenSpaceEffectBuilder", () => {
 
     builder.addUniform({
       name: "u_flipHorizontal",
-      type: UniformType.Bool,
+      type: "bool",
       bind: (uniform, _context) => uniform.setUniform1i(1),
     });
 
     builder.addUniform({
       name: "u_flipVertical",
-      type: UniformType.Bool,
+      type: "bool",
       bind: (uniform, _context) => uniform.setUniform1i(0),
     });
 
-    builder.addVarying("v_uv", VaryingType.Vec2);
+    builder.addVarying("v_uv", "vec2");
     builder.finish();
 
     expect(System.instance.techniques.numTechniques).to.equal(numTechniques + 1);

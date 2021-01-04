@@ -6,7 +6,7 @@
  * @module Effects
  */
 
-import { ScreenSpaceEffectBuilder, Tool, UniformType, VaryingType } from "@bentley/imodeljs-frontend";
+import { ScreenSpaceEffectBuilder, Tool } from "@bentley/imodeljs-frontend";
 import { parseArgs } from "../tools/parseArgs";
 import { AddEffectTool } from "./EffectTools";
 
@@ -56,10 +56,10 @@ export class SaturationEffect extends AddEffectTool {
   }
 
   protected defineEffect(builder: ScreenSpaceEffectBuilder): void {
-    builder.addVarying("v_texCoord", VaryingType.Vec2);
+    builder.addVarying("v_texCoord", "vec2");
     builder.addUniform({
       name: "u_saturationMult",
-      type: UniformType.Float,
+      type: "float",
       bind: (uniform) => uniform.setUniform1f(SaturationConfig.multiplier),
     });
   }
