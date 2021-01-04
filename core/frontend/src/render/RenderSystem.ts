@@ -30,6 +30,7 @@ import { RenderGraphic, RenderGraphicOwner } from "./RenderGraphic";
 import { RenderMemory } from "./RenderMemory";
 import { RenderTarget } from "./RenderTarget";
 import { ScreenSpaceEffectBuilder, ScreenSpaceEffectBuilderParams } from "./effects/ScreenSpaceEffectBuilder";
+import { ParticleEffectBuilder, ParticleEffectBuilderParams } from "./effects/ParticleEffectBuilder";
 
 /* eslint-disable no-restricted-syntax */
 // cSpell:ignore deserializing subcat uninstanced wiremesh qorigin trimesh
@@ -239,6 +240,14 @@ export abstract class RenderSystem implements IDisposable {
    * @beta
    */
   public createScreenSpaceEffectBuilder(_params: ScreenSpaceEffectBuilderParams): ScreenSpaceEffectBuilder | undefined {
+    return undefined;
+  }
+
+  /** Obtain an object capable of producing a custom particle effect to be displayed in a [[Viewport]].
+   * @returns undefined if particle effects are not supported by this RenderSystem, e.g., if WebGL 2 is unsupported by the client.
+   * @beta
+   */
+  public createParticleEffectBuilder<T>(_params: ParticleEffectBuilderParams): ParticleEffectBuilder<T> | undefined {
     return undefined;
   }
 

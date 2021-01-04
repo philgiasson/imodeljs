@@ -31,6 +31,7 @@ import { RenderGraphic, RenderGraphicOwner } from "../RenderGraphic";
 import { RenderMemory } from "../RenderMemory";
 import { DebugShaderFile, GLTimerResultCallback, RenderDiagnostics, RenderSystem, RenderSystemDebugControl, RenderTerrainMeshGeometry, TerrainTexture } from "../RenderSystem";
 import { ScreenSpaceEffectBuilder, ScreenSpaceEffectBuilderParams } from "../effects/ScreenSpaceEffectBuilder";
+import { ParticleEffectBuilder, ParticleEffectBuilderParams } from "../effects/ParticleEffectBuilder";
 import { RenderTarget } from "../RenderTarget";
 import { imageElementFromImageSource } from "../../ImageUtil";
 import { BackgroundMapDrape } from "./BackgroundMapDrape";
@@ -59,6 +60,7 @@ import { Techniques } from "./Technique";
 import { TerrainMeshGeometry } from "./TerrainMesh";
 import { Texture, TextureHandle } from "./Texture";
 import { createScreenSpaceEffectBuilder, ScreenSpaceEffects } from "./ScreenSpaceEffect";
+import { createParticleEffectBuilder } from "./ParticleEffect";
 
 /* eslint-disable no-restricted-syntax */
 
@@ -553,6 +555,10 @@ export class System extends RenderSystem implements RenderSystemDebugControl, Re
 
   public createScreenSpaceEffectBuilder(params: ScreenSpaceEffectBuilderParams): ScreenSpaceEffectBuilder {
     return createScreenSpaceEffectBuilder(params);
+  }
+
+  public createParticleEffectBuilder<T>(params: ParticleEffectBuilderParams): ParticleEffectBuilder<T> | undefined {
+    return createParticleEffectBuilder<T>(params);
   }
 
   public applyRenderState(newState: RenderState) {

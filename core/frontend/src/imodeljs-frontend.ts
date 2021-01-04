@@ -92,6 +92,7 @@ export * from "./render/RenderPlanarClassifier";
 export * from "./render/RenderTarget";
 export * from "./render/RenderSystem";
 export * from "./render/Scene";
+export * from "./render/effects/ParticleEffectBuilder";
 export * from "./render/effects/ScreenSpaceEffectBuilder";
 export * from "./render/effects/Uniform";
 export * from "./render/effects/VaryingType";

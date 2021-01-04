@@ -20,29 +20,10 @@ import { getDrawParams } from "./ScratchDrawParams";
 import { SingularTechnique } from "./Technique";
 import { Target } from "./Target";
 import { System } from "./System";
+import { getUniformVariableType, getVaryingVariableType } from "./EffectBuilder";
 import { createScreenSpaceEffectProgramBuilder } from "./glsl/ScreenSpaceEffect";
 
 type ShouldApply = (context: ScreenSpaceEffectContext) => boolean;
-
-function getUniformVariableType(type: UniformType): VariableType {
-  switch (type) {
-    case UniformType.Bool: return VariableType.Boolean;
-    case UniformType.Int: return VariableType.Int;
-    case UniformType.Float: return VariableType.Float;
-    case UniformType.Vec2: return VariableType.Vec2;
-    case UniformType.Vec3: return VariableType.Vec3;
-    case UniformType.Vec4: return VariableType.Vec4;
-  }
-}
-
-function getVaryingVariableType(type: VaryingType): VariableType {
-  switch (type) {
-    case VaryingType.Float: return VariableType.Float;
-    case VaryingType.Vec2: return VariableType.Vec2;
-    case VaryingType.Vec3: return VariableType.Vec3;
-    case VaryingType.Vec4: return VariableType.Vec4;
-  }
-}
 
 class Builder {
   private readonly _name: string;
