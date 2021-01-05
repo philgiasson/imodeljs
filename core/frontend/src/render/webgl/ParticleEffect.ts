@@ -41,14 +41,10 @@ class Builder<T> implements ParticleEffectBuilder<T> {
     this._compute = createParticleComputeBuilder(params, this._attributes);
     this._render = createParticleRenderBuilder(params, this._attributes);
 
-    this.addProperty({
-      name: "pos",
-      type: "vec3",
-      forRender: true,
-    });
-
-    this.addProperty({ name: "age", type: "float" });
-    this.addProperty({ name: "lifetime", type: "float" });
+    const fragProps = params.source.render.fragmentProperties ?? [];
+    this.addProperty({ name: "pos", type: "vec3", forRender: -1 !== fragProps.indexOf("pos"), });
+    this.addProperty({ name: "age", type: "float", forRender: -1 !== fragProps.indexOf("age") });
+    this.addProperty({ name: "lifetime", type: "float", forRender: -1 !== fragProps.indexOf("lifetime") });
   }
 
   public addUniform(params: ParticleUniformParams<T>): void {
@@ -63,11 +59,11 @@ class Builder<T> implements ParticleEffectBuilder<T> {
       });
     };
 
-
-    if ("render" !== params.scope)
+    const scope = params.scope ?? "compute";
+    if ("render" !== scope)
       add(this._compute);
 
-    if ("compute" !== params.scope)
+    if ("compute" !== scope)
       add(this._render);
   }
 
@@ -83,10 +79,11 @@ class Builder<T> implements ParticleEffectBuilder<T> {
       });
     };
 
-    if ("render" !== params.scope)
+    const scope = params.scope ?? "compute";
+    if ("render" !== scope)
       add(this._compute);
 
-    if ("compute" !== params.scope)
+    if ("compute" !== scope)
       add(this._render);
   }
 
@@ -98,7 +95,7 @@ class Builder<T> implements ParticleEffectBuilder<T> {
     const type = getEffectVariableType(params.type);
     this._compute.addVarying(`v_${params.name}`, type);
     if (params.forRender)
-      this._render.addVarying(`v_${params.name}`, type);
+      this._render.addInlineComputedVarying(`v_${params.name}`, type, `v_${params.name} = a_${params.name};`);
 
     this._attributes.set(`a_${params.name}`, {
       location: this._attributes.size,
@@ -111,6 +108,8 @@ class Builder<T> implements ParticleEffectBuilder<T> {
     const context = system.context;
     const compute = this._compute.buildProgram(context);
 
+    console.log(compute.vertSource);
+
     if (CompileStatus.Success !== compute.compile())
       throw new Error(`Failed to compile compute shader program for particle effect "${this._name}"`);
 
@@ -118,6 +117,7 @@ class Builder<T> implements ParticleEffectBuilder<T> {
     // produce appropriate shaders.
     const render = this._render.buildProgram(context);
     console.log(render.vertSource);
+    console.log(render.fragSource);
     if (CompileStatus.Success !== render.compile())
       throw new Error(`Failed to compile render shader program for particle effect "${this._name}"`);
 

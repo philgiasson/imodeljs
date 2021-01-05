@@ -15,6 +15,13 @@ import { VaryingType } from "./VaryingType";
  */
 export type ParticlePropertyType = "float" | "vec2" | "vec3" | "vec4";
 
+/** The names of properties that are present on all particles. A [[ParticleEffectBuilder]] defines these automatically. The author of the particle effect
+ * can define additional properties.
+ * @see [[ParticleEffectSource.compute.fragmentProperties]] to make any of these properties available in the render program's fragment shader.
+ * @beta
+ */
+export type ParticlePropertyName = "pos" | "age" | "lifetime";
+
 /** Snippets of GLSL source code used to implement a particle effect. The code should not declare uniforms, attributes, or varyings - those will be generated from
  * the [[ParticleEffectBuilder]].
  * @see [[ParticleEffectBuilderParams]].
@@ -51,6 +58,8 @@ export interface ParticleEffectSource {
      * @note Do not define `main()` - it will automatically be defined to call `effectMain()`.
      */
     fragment: string;
+    /** The names of built-in properties that should be forwarded as varyings to the render program's fragment shader. */
+    fragmentProperties?: ParticlePropertyName[];
   }
 }
 
@@ -97,16 +106,17 @@ export interface ParticlePropertyParams {
  * Most of the compute program's code is supplied by the author of the particle effect, while most of the render program's code is usually supplied by the [[RenderSystem]].
  * The two programs may need entirely different sets of uniforms, though some uniforms may be relevant to both programs.
  * As part of a [[ParticleUniformParams]] or [[ParticleUniformArrayParams]], the scope tells a [[ParticleEffectBuilder]] which program will use the uniform.
+ * If the scope is omitted, it defaults to "compute".
  * @see [[ParticleEffectBuilder.addUniform]] and [[ParticleEffectBuilder.addUniformArray]] to define a particle effect's uniform variables.
  * @beta
  */
 export type ParticleUniformScope = "compute" | "render" | "both";
 
-/** Parameters used to define a uniform variable for a particle effect.
+/** Parameters used to define a uniform variable for a particle effect. The `scope` property defines which shader program(s) receive the uniform; if omitted, it defaults to "compute".
  * @see [[ParticleEffectBuilder.addUniform]] to define a uniform variable.
  * @beta
  */
-export type ParticleUniformParams<T> = UniformParams<ParticleUniformContext<T>> & { scope: ParticleUniformScope };
+export type ParticleUniformParams<T> = UniformParams<ParticleUniformContext<T>> & { scope?: ParticleUniformScope };
 
 /** Parameters used to define an array of uniform variables for a particle effect.
  * @see [[ParticleEffectBuilder.addUniformArray]] to define a uniform array.

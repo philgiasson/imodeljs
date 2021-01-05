@@ -72,7 +72,7 @@ export function createParticleComputeBuilder(params: ParticleEffectBuilderParams
 /** @internal */
 export function createParticleRenderBuilder(params: ParticleEffectBuilderParams, attributes: Map<string, AttributeDetails>): ProgramBuilder {
   const builder = new ProgramBuilder(attributes);
-  builder.setDebugDescription(`$Particle Render: ${params.name}`);
+  builder.setDebugDescription(`Particle Render: ${params.name}`);
 
   builder.vert.addFunction(params.source.render.vertex);
   builder.vert.set(VertexShaderComponent.ComputePosition, computePosition);
