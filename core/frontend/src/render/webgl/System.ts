@@ -639,7 +639,13 @@ export class System extends RenderSystem implements RenderSystemDebugControl, Re
   }
 
   /** Attempt to create a texture for the given iModel using an ImageBuffer. */
-  public createTextureFromImageBuffer(image: ImageBuffer, imodel: IModelConnection, params: RenderTexture.Params): RenderTexture | undefined {
+  public createTextureFromImageBuffer(image: ImageBuffer, imodel: IModelConnection | undefined, params: RenderTexture.Params): RenderTexture | undefined {
+    if (!imodel) {
+      // Caller is reponsible for disposing of this texture appropriately.
+      const handle = TextureHandle.createForImageBuffer(image, params.type);
+      return handle ? new Texture(params, handle) : undefined;
+    }
+
     return this.getIdMap(imodel).getTexture(image, params);
   }
 
