@@ -120,7 +120,7 @@ export class AttributeMap {
   }
 
   public static addEntryFromUninstancedDetails(techniqueId: TechniqueId, details: Map<string, AttributeDetails>): void {
-    assert(undefined === this.findAttributeMap(techniqueId, false));
+    assert(undefined === attributeMap._attrMaps.get(techniqueId));
     assert(details.size > 0);
 
     const infos: AttributeInfo[] = [];

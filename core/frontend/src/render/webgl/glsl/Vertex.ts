@@ -165,25 +165,30 @@ function addPositionFromLUT(vert: VertexShaderBuilder) {
 }
 
 /** @internal */
-export function addPosition(vert: VertexShaderBuilder, fromLUT: boolean) {
-  vert.addFunction(unquantizePosition);
+export function addPosition(vert: VertexShaderBuilder) {
+  if (!vert.usesQuantizedPosition) {
+    assert(!vert.usesVertexTable);
 
+    return;
+  }
+
+  vert.addFunction(unquantizePosition);
   vert.addUniform("u_qScale", VariableType.Vec3, (prog) => {
     prog.addGraphicUniform("u_qScale", (uniform, params) => {
       uniform.setUniform3fv(params.geometry.qScale);
     });
   });
+
   vert.addUniform("u_qOrigin", VariableType.Vec3, (prog) => {
     prog.addGraphicUniform("u_qOrigin", (uniform, params) => {
       uniform.setUniform3fv(params.geometry.qOrigin);
     });
   });
 
-  if (!fromLUT) {
-    vert.addFunction(unquantizeVertexPosition);
-  } else {
+  if (vert.usesVertexTable)
     addPositionFromLUT(vert);
-  }
+  else
+    vert.addFunction(unquantizeVertexPosition);
 }
 
 /** @internal */

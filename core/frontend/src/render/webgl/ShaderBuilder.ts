@@ -269,9 +269,8 @@ export class ShaderVariables {
   public addBindings(prog: ShaderProgram, predefined?: ShaderVariables): void {
     for (const v of this._list) {
       // Some variables exist in both frag and vert shaders - only add them to the program once.
-      if (v.hasBinding && (undefined === predefined || undefined === predefined.find(v.name))) {
+      if (v.hasBinding && (undefined === predefined || undefined === predefined.find(v.name)))
         v.addBinding(prog);
-      }
     }
   }
 
@@ -373,15 +372,15 @@ export class ShaderVariables {
 
     const varyings = this._list.filter((variable) => VariableScope.Varying === variable.scope);
     // Add in any built in vars that count as varyings if they are used
-    if (fragSource.includes("gl_FragCoord")) {
+    if (fragSource.includes("gl_FragCoord"))
       varyings.push(ShaderVariable.create("gl_FragCoord", VariableType.Vec4, VariableScope.Varying));
-    }
-    if (fragSource.includes("gl_PointCoord")) {
+
+    if (fragSource.includes("gl_PointCoord"))
       varyings.push(ShaderVariable.create("gl_PointCoord", VariableType.Vec2, VariableScope.Varying));
-    }
-    if (fragSource.includes("gl_FrontFacing")) {
+
+    if (fragSource.includes("gl_FrontFacing"))
       varyings.push(ShaderVariable.create("gl_FrontFacing", VariableType.Boolean, VariableScope.Varying));
-    }
+
     // Need to process in size order (largest first)
     varyings.sort((a, b) => b.type - a.type); // this is good enough to sort by
 
@@ -462,13 +461,15 @@ export class SourceBuilder {
 
 /** @internal */
 export const enum ShaderBuilderFlags {
-  // No special flags. Vertex data comes from attributes, geometry is not instanced.
+  // No special flags. Vertex data comes from attributes with quantized positions (16 bit integer per component), geometry is not instanced.
   None = 0,
   // Vertex data comes from a texture.
   VertexTable = 1 << 0,
   // Geometry is instanced.
   Instanced = 1 << 1,
   InstancedVertexTable = VertexTable | Instanced,
+  // Positions are not quantized (32 bit float per component).
+  Unquantized = 1 << 2,
 }
 
 /*
@@ -489,6 +490,7 @@ export class ShaderBuilder extends ShaderVariables {
 
   public get usesVertexTable() { return ShaderBuilderFlags.None !== (this._flags & ShaderBuilderFlags.VertexTable); }
   public get usesInstancedGeometry() { return ShaderBuilderFlags.None !== (this._flags & ShaderBuilderFlags.Instanced); }
+  public get usesQuantizedPosition() { return ShaderBuilderFlags.None === (this._flags & ShaderBuilderFlags.Unquantized); }
 
   public addInitializer(initializer: string): void {
     if (-1 === this._initializers.indexOf(initializer))
@@ -539,9 +541,8 @@ export class ShaderBuilder extends ShaderVariables {
 
   public replaceFunction(existing: string, replacement: string): boolean {
     const index = this._functions.indexOf(existing);
-    if (-1 !== index) {
+    if (-1 !== index)
       this._functions[index] = replacement;
-    }
 
     assert(-1 !== index);
     return -1 !== index;
@@ -717,7 +718,7 @@ export class VertexShaderBuilder extends ShaderBuilder {
       this.addDefine("MAT_MVP", "u_mvp");
     }
 
-    addPosition(this, this.usesVertexTable);
+    addPosition(this);
   }
 
   public get(id: VertexShaderComponent): string | undefined { return this.getComponent(id); }
@@ -736,9 +737,8 @@ export class VertexShaderBuilder extends ShaderBuilder {
 
     const computePosition = this.get(VertexShaderComponent.ComputePosition);
     assert(undefined !== computePosition);
-    if (undefined !== computePosition) {
+    if (undefined !== computePosition)
       prelude.addFunction("vec4 computePosition(vec4 rawPos)", computePosition);
-    }
 
     // Initialization logic that should occur at start of main() - primarily global variables whose values
     // are too complex to compute inline or which depend on uniforms and/or other globals.
@@ -749,7 +749,11 @@ export class VertexShaderBuilder extends ShaderBuilder {
         main.addline(`  { ${init} }\n`);
     }
 
-    main.addline("  vec4 rawPosition = unquantizeVertexPosition(a_pos, u_qOrigin, u_qScale);");
+    if (this.usesQuantizedPosition)
+      main.addline("  vec4 rawPosition = unquantizeVertexPosition(a_pos, u_qOrigin, u_qScale);");
+    else
+      main.addline("  vec4 rawPosition = vec4(a_pos, 1.0);");
+
     const adjustRawPosition = this.get(VertexShaderComponent.AdjustRawPosition);
     if (undefined !== adjustRawPosition) {
       prelude.addFunction("vec4 adjustRawPosition(vec4 rawPos)", adjustRawPosition);
@@ -931,9 +935,7 @@ export class FragmentShaderBuilder extends ShaderBuilder {
 
     const computeBaseColor = this.get(FragmentShaderComponent.ComputeBaseColor);
     assert(undefined !== computeBaseColor);
-    if (undefined !== computeBaseColor) {
-      prelude.addFunction("vec4 computeBaseColor()", computeBaseColor);
-    }
+    prelude.addFunction("vec4 computeBaseColor()", computeBaseColor);
 
     const main = new SourceBuilder();
     main.newline();
@@ -1108,13 +1110,11 @@ export class ProgramBuilder {
   }
 
   private addVariable(v: ShaderVariable, which: ShaderType) {
-    if (which & ShaderType.Fragment) {
+    if (which & ShaderType.Fragment)
       this.frag.addVariable(v);
-    }
 
-    if (which & ShaderType.Vertex) {
+    if (which & ShaderType.Vertex)
       this.vert.addVariable(v);
-    }
   }
 
   public addUniform(name: string, type: VariableType, binding: AddVariableBinding, which: ShaderType = ShaderType.Both) {

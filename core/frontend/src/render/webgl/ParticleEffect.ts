@@ -42,10 +42,13 @@ class Builder<T> implements ParticleEffectBuilder<T> {
     this._render = createParticleRenderBuilder(params, this._attributes);
 
     this.addProperty({
-      name: "position",
+      name: "pos",
       type: "vec3",
       forRender: true,
     });
+
+    this.addProperty({ name: "age", type: "float" });
+    this.addProperty({ name: "lifetime", type: "float" });
   }
 
   public addUniform(params: ParticleUniformParams<T>): void {
@@ -107,12 +110,14 @@ class Builder<T> implements ParticleEffectBuilder<T> {
     const system = System.instance;
     const context = system.context;
     const compute = this._compute.buildProgram(context);
+
     if (CompileStatus.Success !== compute.compile())
       throw new Error(`Failed to compile compute shader program for particle effect "${this._name}"`);
 
     // ###TODO Allow user to specify whether particles are opaque, transparent, or a mix of both;
     // produce appropriate shaders.
     const render = this._render.buildProgram(context);
+    console.log(render.vertSource);
     if (CompileStatus.Success !== render.compile())
       throw new Error(`Failed to compile render shader program for particle effect "${this._name}"`);
 

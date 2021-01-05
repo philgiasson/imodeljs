@@ -23,29 +23,32 @@ export type ParticlePropertyType = "float" | "vec2" | "vec3" | "vec4";
  */
 export interface ParticleEffectSource {
   /** GLSL source code for the vertex shader that computes a particle's properties.
-   * A function to generate a pseudo-random number in [0..1] will be automatically included: `float pseudoRandom()`.
    */
   compute: {
-    /** The body of a function `void initializeParticle()` that assigns values to all output properties of a newborn particle, excluding `v_age` but including `v_lifetime` and `v_position`. */
+    /** The body of a function `void initializeParticle()` that assigns values to all output properties of a newborn particle, excluding `v_age` but including `v_lifetime` and `v_pos`. */
     initialize: string;
     /** The body of a function `void updateParticle(float deltaMillis)` that computes the particle's properties from the input attributes and `deltaMillis` and assigns them to the output varyings.
-     * e.g., compute `v_position` from `a_position`.
+     * e.g., compute `v_pos` from `a_pos`.
      * @note `updateParticle()` needn't assign to `v_lifetime` - particle lifetimes typically remain fixed from birth.
      * @note `updateParticle()` should not assign to `v_age` nor check if the particle's lifetime has expired - this is handled automatically.
      */
     update: string;
     /** Any code that resides outside of `updateParticle()` and `initializeParticle()`, to be inserted before those two functions in the completed source code. */
     prelude?: string;
+    /** If true, a function to generate a pseudo-random number in [0..1] will be automatically included: `float pseudoRandom()`. */
+    pseudoRandom?: boolean;
   },
 
   /** GLSL source code for the shader program that renders a particle. */
   render: {
     /** GLSL code including a function `void effectMain()` responsible for assigning to any varying variables used by the fragment shader.
-     * @note Do not assign to `gl_Position` - it will be computed from `a_position`, which is the center of the particle.
+     * @note Do not assign to `gl_Position` - it will be computed from `a_pos`, which is the center of the particle.
+     * @note Do not define `main()` - it will automatically be defined to call `effectMain()`.
      */
     vertex: string;
     /** GLSL code including a function `vec4 effectMain()` responsible for computing the color of the particle fragment.
      * @note Do not assign to `gl_FragColor` - the [[RenderSystem]] will take care of that.
+     * @note Do not define `main()` - it will automatically be defined to call `effectMain()`.
      */
     fragment: string;
   }
@@ -82,6 +85,9 @@ export interface ParticlePropertyParams {
   /** The GLSL type of the corresponding attribute and varying variable. */
   type: ParticlePropertyType;
   /** By default, properties are only used by the effect's "compute" shader program. If `forRender` is true, the property will also be available within the "render" shader program. */
+  /** Particle properties are received by the vertex shaders of both the compute and render programs. By default, they are only output as varyings by the compute program.
+   * Set this to `true` to make the property accessible as a varying in the render program's fragment shader.
+   */
   forRender?: boolean;
 }
 
@@ -125,8 +131,8 @@ export type ParticleUniformArrayParams<T> = UniformArrayParams<ParticleUniformCo
  *
  * The following properties are predefined by the [[RenderSystem]] for all particle effects:
  *  - Position: the particle's current position in the particle system's local coordinate space. The effect author is responsible for initializing and updating each particle's position.
- *    - Input: `in vec3 a_position`
- *    - Output: `out vec3 v_position`
+ *    - Input: `in vec3 a_pos`
+ *    - Output: `out vec3 v_pos`
  *  - Age: the number of milliseconds for which the particle has been alive. The [[RenderSystem]] takes care of updating each particle's age and destroying the particle once it exceeds its lifetime.
  *    - Input: `in float a_age`
  *    - Output: `out float v_age`
@@ -134,7 +140,6 @@ export type ParticleUniformArrayParams<T> = UniformArrayParams<ParticleUniformCo
  *    - Input: `in float a_lifetime`
  *    - Output: `out float v_lifetime`
  *
- * The "compute" vertex shader has access to a predefined function to produce a pseudo-random number in [0..1]: `highp float pseudoRandom()`.
  * @see [[ParticleEffectSource]] for details about defining the effect's GLSL implementation.
  * @beta
  */
