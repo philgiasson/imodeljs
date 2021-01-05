@@ -6,6 +6,7 @@
  * @module WebGL
  */
 
+import { assert } from "@bentley/bentleyjs-core";
 import { VariableType } from "./ShaderBuilder";
 import { TechniqueId } from "./TechniqueId";
 
@@ -116,6 +117,17 @@ export class AttributeMap {
 
   public static findAttribute(attributeName: string, techniqueId: TechniqueId | undefined, instanced: boolean): AttributeDetails | undefined {
     return AttributeMap.findAttributeMap(techniqueId, instanced).get(attributeName);
+  }
+
+  public static addEntryFromUninstancedDetails(techniqueId: TechniqueId, details: Map<string, AttributeDetails>): void {
+    assert(undefined === this.findAttributeMap(techniqueId, false));
+    assert(details.size > 0);
+
+    const infos: AttributeInfo[] = [];
+    for (let [key, value] of details)
+      infos.push([key, value.location, value.type]);
+
+    attributeMap._attrMaps.set(techniqueId, new AttributeMapEntry(infos));
   }
 }
 

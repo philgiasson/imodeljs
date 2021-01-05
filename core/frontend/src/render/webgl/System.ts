@@ -60,7 +60,7 @@ import { Techniques } from "./Technique";
 import { TerrainMeshGeometry } from "./TerrainMesh";
 import { Texture, TextureHandle } from "./Texture";
 import { createScreenSpaceEffectBuilder, ScreenSpaceEffects } from "./ScreenSpaceEffect";
-import { createParticleEffectBuilder } from "./ParticleEffect";
+import { createParticleEffectBuilder, ParticleEffects } from "./ParticleEffect";
 
 /* eslint-disable no-restricted-syntax */
 
@@ -365,6 +365,7 @@ export class System extends RenderSystem implements RenderSystemDebugControl, Re
   private _noiseTexture?: TextureHandle;
   private _techniques?: Techniques;
   private _screenSpaceEffects?: ScreenSpaceEffects;
+  private _particleEffects?: ParticleEffects;
   public readonly debugShaderFiles: DebugShaderFile[] = [];
 
   public static get instance() { return IModelApp.renderSystem as System; }
@@ -378,9 +379,14 @@ export class System extends RenderSystem implements RenderSystemDebugControl, Re
     return this._techniques;
   }
 
-  public get screenSpaceEffects() {
+  public get screenSpaceEffects(): ScreenSpaceEffects {
     assert(undefined !== this._screenSpaceEffects);
     return this._screenSpaceEffects;
+  }
+
+  public get particleEffects(): ParticleEffects {
+    assert(undefined !== this._particleEffects);
+    return this._particleEffects;
   }
 
   public get maxTextureSize(): number { return this.capabilities.maxTextureSize; }
@@ -448,13 +454,15 @@ export class System extends RenderSystem implements RenderSystemDebugControl, Re
     return undefined === this._techniques
       && undefined === this._lineCodeTexture
       && undefined === this._noiseTexture
-      && undefined === this._screenSpaceEffects;
+      && undefined === this._screenSpaceEffects
+      && undefined === this._particleEffects;
   }
 
   // Note: FrameBuffers inside of the FrameBufferStack are not owned by the System, and are only used as a central storage device
   public dispose() {
     this._techniques = dispose(this._techniques);
     this._screenSpaceEffects = dispose(this._screenSpaceEffects);
+    this._particleEffects = dispose(this._particleEffects);
     this._lineCodeTexture = dispose(this._lineCodeTexture);
     this._noiseTexture = dispose(this._noiseTexture);
 
@@ -482,6 +490,7 @@ export class System extends RenderSystem implements RenderSystemDebugControl, Re
     assert(undefined !== this._lineCodeTexture, "System.lineCodeTexture not created.");
 
     this._screenSpaceEffects = new ScreenSpaceEffects();
+    this._particleEffects = new ParticleEffects();
   }
 
   public createTarget(canvas: HTMLCanvasElement): RenderTarget {
