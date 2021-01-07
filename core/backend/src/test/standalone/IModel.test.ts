@@ -117,6 +117,59 @@ describe("iModel", () => {
     return entity2;
   };
 
+  function getMasterModelDisplayName(modeledElement: Element, hierarchySubjectElement: Subject): string {
+    const iModelDb = modeledElement.iModel;
+
+    const jobSubject = iModelDb.elements.tryGetElement<Subject>(hierarchySubjectElement.parent?.id || "0");
+    if (jobSubject === undefined)
+      throw new Error(`Hierarchy Subject element ${hierarchySubjectElement.id} parent ${hierarchySubjectElement.parent?.id} was not found. The iModel is corrupt!`);
+
+    const sourceMasterModelSubject = iModelDb.elements.tryGetElement<Subject>(jobSubject.parent?.id || "0");
+    if (sourceMasterModelSubject === undefined)
+      throw new Error(`Job Subject element ${jobSubject.id} parent ${jobSubject.parent?.id} was not found.The iModel is corrupt!`);
+
+    if (sourceMasterModelSubject.userLabel === undefined)
+      throw new Error(`Source MasterModel Subject element ${sourceMasterModelSubject.id} has no userlabel.The iModel is corrupt!`);
+
+    return sourceMasterModelSubject.userLabel;
+  }
+
+  function getModelDisplayName(iModelDb: IModelDb, modelId: Id64String): string {
+    const modeledElement = iModelDb.elements.getElement(modelId);
+    const parentElement = iModelDb.elements.tryGetElement<Subject>(modeledElement.parent?.id || "0");
+    if (parentElement === undefined)
+      throw new Error(`element ${modeledElement.id} has no parent. This is impossible!`);
+
+    if (parentElement.jsonProperties?.Subject?.Model?.Type === "Hierarchy")
+      return getMasterModelDisplayName(modeledElement, parentElement);
+
+    if (parentElement.code.value === undefined)
+      throw new Error(`The model's parent element ${parentElement.id} has no code. The iModel is corrupt!`);
+
+    return parentElement.code.value;
+  }
+
+  it("test subject query", () => {
+    const iModelDb = SnapshotDb.openFile(IModelTestUtils.resolveAssetFile("mstnConnector.bim"));
+
+    const modelIds: string[] = [];
+    iModelDb.withPreparedStatement("select ecinstanceid as id from bis.GeometricModel3d", (stmt) => {
+      while (stmt.step() === DbResult.BE_SQLITE_ROW) {
+        modelIds.push(stmt.getValue(0).getId());
+      }
+    });
+
+    for (const modelId of modelIds) {
+      try {
+        // eslint-disable-next-line no-console
+        console.log(`model ${modelId} is displayed as ${getModelDisplayName(iModelDb, modelId)} `);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(`Failed to get display string for model ${modelId}. Error = ${err}`);
+      }
+    }
+  });
+
   it("should verify object vault", () => {
     const platform = IModelHost.platform;
 
@@ -399,11 +452,11 @@ describe("iModel", () => {
         category: seedElement.category,
         code: Code.createEmpty(),
         federationGuid: Guid.createValue(),
-        userLabel: `UserLabel-${i}`,
+        userLabel: `UserLabel - ${i} `,
       };
 
       const element: Element = imodel2.elements.createElement(elementProps);
-      element.setUserProperties("performanceTest", { s: `String-${i}`, n: i });
+      element.setUserProperties("performanceTest", { s: `String - ${i} `, n: i });
 
       const elementId: Id64String = imodel2.elements.insertElement(element);
       assert.isTrue(Id64.isValidId64(elementId));
@@ -682,7 +735,7 @@ describe("iModel", () => {
     let suffix = 123;
     for (const test of testCases) {
       const expected = test[0] ?? {};
-      const styleId = DisplayStyle3d.insert(imodel2, IModel.dictionaryId, `TestStyle${suffix++}`, expected);
+      const styleId = DisplayStyle3d.insert(imodel2, IModel.dictionaryId, `TestStyle${suffix++} `, expected);
       const style = imodel2.elements.getElement<DisplayStyle3d>(styleId).toJSON();
       expect(style.jsonProperties.styles!).not.to.be.undefined;
 
@@ -839,7 +892,7 @@ describe("iModel", () => {
 
   // NOTE: this test can be removed when the deprecated executeQuery method is removed
   it("should produce an array of rows", () => {
-    const rows: any[] = IModelTestUtils.executeQuery(imodel1, `SELECT * FROM ${Category.classFullName}`); // eslint-disable-line deprecation/deprecation
+    const rows: any[] = IModelTestUtils.executeQuery(imodel1, `SELECT * FROM ${Category.classFullName} `); // eslint-disable-line deprecation/deprecation
     assert.exists(rows);
     assert.isArray(rows);
     assert.isAtLeast(rows.length, 1);
@@ -848,7 +901,7 @@ describe("iModel", () => {
   });
 
   it("should be some categories", () => {
-    const categorySql = `SELECT ECInstanceId FROM ${Category.classFullName}`;
+    const categorySql = `SELECT ECInstanceId FROM ${Category.classFullName} `;
     imodel1.withPreparedStatement(categorySql, (categoryStatement: ECSqlStatement): void => {
       let numCategories = 0;
       while (DbResult.BE_SQLITE_ROW === categoryStatement.step()) {
@@ -868,7 +921,7 @@ describe("iModel", () => {
         }
 
         // get the subcategories
-        const subCategorySql = `SELECT ECInstanceId FROM ${SubCategory.classFullName} WHERE Parent.Id=:parentId`;
+        const subCategorySql = `SELECT ECInstanceId FROM ${SubCategory.classFullName} WHERE Parent.Id =: parentId`;
         imodel1.withPreparedStatement(subCategorySql, (subCategoryStatement: ECSqlStatement): void => {
           let numSubCategories = 0;
           subCategoryStatement.bindId("parentId", categoryId);
@@ -887,7 +940,7 @@ describe("iModel", () => {
   });
 
   it("should be some 2d elements", () => {
-    const sql = `SELECT ECInstanceId FROM ${DrawingGraphic.classFullName}`;
+    const sql = `SELECT ECInstanceId FROM ${DrawingGraphic.classFullName} `;
     imodel2.withPreparedStatement(sql, (statement: ECSqlStatement): void => {
       let numDrawingGraphics = 0;
       let found25: boolean = false;
@@ -970,7 +1023,7 @@ describe("iModel", () => {
   });
 
   it("should be children of RootSubject", () => {
-    const sql = `SELECT ECInstanceId FROM ${Model.classFullName} WHERE ParentModel.Id=:parentModelId`;
+    const sql = `SELECT ECInstanceId FROM ${Model.classFullName} WHERE ParentModel.Id =: parentModelId`;
     imodel2.withPreparedStatement(sql, (statement: ECSqlStatement): void => {
       statement.bindId("parentModelId", IModel.repositoryModelId);
       let numModels = 0;
@@ -1576,7 +1629,7 @@ describe("iModel", () => {
     DefinitionGroupGroupsDefinitions.insert(iModelDb, definitionGroupId, categoryId1);
     DefinitionGroupGroupsDefinitions.insert(iModelDb, definitionGroupId, categoryId2);
     DefinitionGroupGroupsDefinitions.insert(iModelDb, definitionGroupId, categoryId3);
-    const numMembers = iModelDb.withPreparedStatement(`SELECT COUNT(*) FROM ${DefinitionGroupGroupsDefinitions.classFullName}`, (statement: ECSqlStatement): number => {
+    const numMembers = iModelDb.withPreparedStatement(`SELECT COUNT(*) FROM ${DefinitionGroupGroupsDefinitions.classFullName} `, (statement: ECSqlStatement): number => {
       return statement.step() === DbResult.BE_SQLITE_ROW ? statement.getValue(0).getInteger() : 0;
     });
     assert.equal(numMembers, 3);
@@ -1739,7 +1792,7 @@ describe("iModel", () => {
       ecId: "INVALID",
       changeSetId,
       containerAccessKeyAccount: "testAccount",
-      containerAccessKeyContainer: `imodelblocks-${iModelId}`,
+      containerAccessKeyContainer: `imodelblocks - ${iModelId} `,
       containerAccessKeySAS: "testSAS",
       containerAccessKeyDbName: "testDb",
     };
@@ -1930,7 +1983,7 @@ describe("iModel", () => {
 
   function hasClassView(db: IModelDb, name: string): boolean {
     try {
-      return db.withPreparedSqliteStatement(`SELECT ECInstanceId FROM [${name}]`, (): boolean => true);
+      return db.withPreparedSqliteStatement(`SELECT ECInstanceId FROM[${name}]`, (): boolean => true);
     } catch (e) {
       return false;
     }
@@ -2176,7 +2229,7 @@ describe("iModel", () => {
         assert.equal(val1.columnName, "Name");
         assert.equal(val1.type, SqliteValueType.String);
         assert.isFalse(val1.isNull);
-        assert.equal(val1.getString(), `Dummy ${i}`);
+        assert.equal(val1.getString(), `Dummy ${i} `);
 
         const val2: SqliteValue = stmt.getValue(2);
         assert.equal(val2.columnName, "Code");
@@ -2186,7 +2239,7 @@ describe("iModel", () => {
 
         const row: any = stmt.getRow();
         assert.equal(row.id, i);
-        assert.equal(row.name, `Dummy ${i}`);
+        assert.equal(row.name, `Dummy ${i} `);
         assert.equal(row.code, i * 100);
       }
       assert.equal(stmt.step(), DbResult.BE_SQLITE_DONE);
