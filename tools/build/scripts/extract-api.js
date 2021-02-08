@@ -105,8 +105,8 @@ const args = [
   "run",
   "-c", configFileName
 ];
-if (!isCI)
-  args.push("-l");
+
+args.push("-l");
 
 spawn(require.resolve(".bin/api-extractor"), args).then((code) => {
   if (fs.existsSync(configFileName))
