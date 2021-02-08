@@ -75,6 +75,7 @@ steps:
     inputs:
       PathtoPublish: 'common/api/ecschema-metadata.api.md'
       ArtifactName: ecschema-metadata
+    condition: succeededOrFailed()
 
   # # By default linux agents do not have a real display so use the virtual framebuffer
   # - script: xvfb-run --auto-servernum --server-args='-screen 0, 1600x900x24' node common/scripts/install-run-rush.js cover --verbose
