@@ -7,7 +7,6 @@ import * as React from 'react';
 
 class DriveToolUiProvider extends ToolUiProvider {
   constructor(info: ConfigurableCreateInfo, options: any) {
-    console.warn('Drive tool provider constructor');
     super(info, options);
   }
 }
