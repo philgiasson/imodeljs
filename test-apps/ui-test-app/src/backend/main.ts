@@ -9,11 +9,13 @@ import * as path from "path";
 import { Config, Logger } from "@bentley/bentleyjs-core";
 import { IModelJsConfig } from "@bentley/config-loader/lib/IModelJsConfig";
 import { IModelHost } from "@bentley/imodeljs-backend";
-import { RpcInterfaceDefinition } from "@bentley/imodeljs-common";
+import { RpcInterfaceDefinition, RpcManager } from "@bentley/imodeljs-common";
 import { Presentation } from "@bentley/presentation-backend";
 import getSupportedRpcs from "../common/rpcs";
 import { initializeLogging } from "./web/BackendServer";
 import { BackendApplicationInsightsClient } from "@bentley/backend-application-insights-client";
+import { CustomRpcInterface } from "../common/CustomRpcInterface";
+import { CustomRpcImpl } from "./CustomRpcImpl";
 
 if (electron) {
   require("@bentley/electron-manager"); // static electron manager initialization
@@ -51,6 +53,9 @@ if (electron) {
       enableSchemasPreload: true,
       updatesPollInterval: 100,
     });
+
+    // Register our custom RPC implementation
+    RpcManager.registerImpl(CustomRpcInterface, CustomRpcImpl);
 
     // invoke platform-specific initialization
     // get platform-specific initialization function
