@@ -24,6 +24,8 @@ import { DateFormatter } from '@bentley/ui-abstract';
 import { DndComponentClass } from 'react-dnd';
 import { EnumerationChoice } from '@bentley/ui-abstract';
 import { Face } from '@bentley/ui-core';
+import { FormatProps } from '@bentley/imodeljs-quantity';
+import { FormatterSpec } from '@bentley/imodeljs-quantity';
 import { GenericUiEventArgs } from '@bentley/ui-abstract';
 import { GlobalContextMenuProps } from '@bentley/ui-core';
 import { GlobalDialogProps } from '@bentley/ui-core';
@@ -57,7 +59,7 @@ import { PropertyDescription } from '@bentley/ui-abstract';
 import { PropertyRecord } from '@bentley/ui-abstract';
 import { PropertyValue } from '@bentley/ui-abstract';
 import * as PropTypes from 'prop-types';
-import { QuantityType } from '@bentley/imodeljs-frontend';
+import { QuantityTypeArg } from '@bentley/imodeljs-frontend';
 import { RatioChangeResult } from '@bentley/ui-core';
 import * as React from 'react';
 import ReactDataGrid = require('react-data-grid');
@@ -70,6 +72,8 @@ import { TimeDisplay } from '@bentley/ui-abstract';
 import { TimeFormat } from '@bentley/ui-core';
 import { UiEvent } from '@bentley/ui-core';
 import { UiSettings } from '@bentley/ui-core';
+import { UnitProps } from '@bentley/imodeljs-quantity';
+import { UnitsProvider } from '@bentley/imodeljs-quantity';
 import { Vector3d } from '@bentley/geometry-core';
 import { ViewManager } from '@bentley/imodeljs-frontend';
 import { Viewport } from '@bentley/imodeljs-frontend';
@@ -878,6 +882,7 @@ export interface ColorPickerPopupProps extends React.ButtonHTMLAttributes<HTMLBu
     popupPosition?: RelativePosition;
     readonly?: boolean;
     ref?: React.Ref<HTMLButtonElement>;
+    showCaret?: boolean;
 }
 
 // @beta
@@ -891,6 +896,7 @@ export interface ColorPickerProps extends React.ButtonHTMLAttributes<HTMLButtonE
     readonly?: boolean;
     ref?: React.Ref<HTMLButtonElement>;
     round?: boolean;
+    showCaret?: boolean;
 }
 
 // @beta
@@ -996,7 +1002,7 @@ export interface CompositeFilterDescriptorCollection {
     logicalOperator: FilterCompositionLogicalOperator;
 }
 
-// @alpha
+// @beta
 export enum CompositeFilterType {
     // (undocumented)
     And = 0,
@@ -1008,9 +1014,11 @@ export enum CompositeFilterType {
 export class CompositePropertyDataFilterer extends PropertyDataFiltererBase {
     constructor(_leftFilterer: IPropertyDataFilterer, _operator: CompositeFilterType, _rightFilterer: IPropertyDataFilterer);
     // (undocumented)
+    categoryMatchesFilter(node: PropertyCategory, parents: PropertyCategory[]): Promise<PropertyDataFilterResult>;
+    // (undocumented)
     get isActive(): boolean;
     // (undocumented)
-    matchesFilter(node: PropertyRecord, parents: PropertyRecord[]): Promise<PropertyDataFilterResult>;
+    recordMatchesFilter(node: PropertyRecord, parents: PropertyRecord[]): Promise<PropertyDataFilterResult>;
     }
 
 // @public
@@ -1372,7 +1380,7 @@ export class DirectionHelpers {
 }
 
 // @alpha
-export class DisplayValuePropertyDataFilterer extends PropertyDataFiltererBase {
+export class DisplayValuePropertyDataFilterer extends PropertyRecordDataFiltererBase {
     constructor(filterText?: string);
     // (undocumented)
     get filterText(): string;
@@ -1380,7 +1388,7 @@ export class DisplayValuePropertyDataFilterer extends PropertyDataFiltererBase {
     // (undocumented)
     get isActive(): boolean;
     // (undocumented)
-    matchesFilter(node: PropertyRecord): Promise<PropertyDataFilterResult>;
+    recordMatchesFilter(node: PropertyRecord): Promise<PropertyDataFilterResult>;
 }
 
 // @beta
@@ -1819,12 +1827,24 @@ export abstract class FilterDescriptorCollectionBase<TDescriptor extends FilterD
     remove(item: TDescriptor): boolean;
 }
 
-// @alpha
+// @beta
 export interface FilteredPropertyData extends PropertyData {
     // (undocumented)
-    getMatchByIndex?: (index: number) => PropertyRecordMatchInfo | undefined;
+    filteredTypes?: FilteredType[];
+    // (undocumented)
+    getMatchByIndex?: (index: number) => HighlightInfo | undefined;
     // (undocumented)
     matchesCount?: number;
+}
+
+// @beta
+export enum FilteredType {
+    // (undocumented)
+    Category = 0,
+    // (undocumented)
+    Label = 1,
+    // (undocumented)
+    Value = 2
 }
 
 // @public
@@ -1969,6 +1989,94 @@ export class FloatTypeConverter extends NumericTypeConverterBase {
 // @internal
 export function formatInputDate(inputDate: Date, timeDisplay?: TimeDisplay, customFormatter?: DateFormatter, alternateDateFormat?: AlternateDateFormats): string | undefined;
 
+// @alpha
+export function FormatPanel(props: FormatPanelProps): JSX.Element;
+
+// @alpha
+export interface FormatPanelProps extends CommonProps {
+    // (undocumented)
+    enableMinimumProperties?: boolean;
+    // (undocumented)
+    initialFormat: FormatProps;
+    // (undocumented)
+    initialMagnitude?: number;
+    // (undocumented)
+    onFormatChange?: (format: FormatProps) => void;
+    // (undocumented)
+    persistenceUnit: Promise<UnitProps> | UnitProps;
+    // (undocumented)
+    provideFormatSpec?: (formatProps: FormatProps, persistenceUnit: UnitProps, unitsProvider: UnitsProvider) => Promise<FormatterSpec>;
+    // (undocumented)
+    providePrimaryChildren?: (formatProps: FormatProps, fireFormatChange: (newProps: FormatProps) => void) => React.ReactNode;
+    // (undocumented)
+    provideSecondaryChildren?: (formatProps: FormatProps, fireFormatChange: (newProps: FormatProps) => void) => React.ReactNode;
+    // (undocumented)
+    showSample?: boolean;
+    // (undocumented)
+    unitsProvider: UnitsProvider;
+}
+
+// @alpha
+export function FormatPrecision(props: FormatPrecisionProps): JSX.Element;
+
+// @alpha
+export interface FormatPrecisionProps extends CommonProps {
+    // (undocumented)
+    formatProps: FormatProps;
+    // (undocumented)
+    onChange?: (format: FormatProps) => void;
+}
+
+// @alpha
+export function FormatSample(props: FormatSampleProps): JSX.Element;
+
+// @alpha
+export interface FormatSampleProps extends CommonProps {
+    // (undocumented)
+    formatSpec?: FormatterSpec;
+    // (undocumented)
+    hideLabels?: boolean;
+    // (undocumented)
+    initialMagnitude?: number;
+}
+
+// @alpha
+export function FormatTypeOption(props: FormatTypeOptionProps): JSX.Element;
+
+// @alpha
+export interface FormatTypeOptionProps extends CommonProps {
+    // (undocumented)
+    formatProps: FormatProps;
+    // (undocumented)
+    onChange?: (format: FormatProps) => void;
+}
+
+// @alpha
+export function FormatUnitLabel(props: FormatUnitLabelProps): JSX.Element;
+
+// @alpha
+export interface FormatUnitLabelProps extends CommonProps {
+    // (undocumented)
+    formatProps: FormatProps;
+    // (undocumented)
+    onUnitLabelChange?: (format: FormatProps) => void;
+}
+
+// @alpha
+export function FormatUnits(props: FormatUnitsProps): JSX.Element;
+
+// @alpha
+export interface FormatUnitsProps extends CommonProps {
+    // (undocumented)
+    initialFormat: FormatProps;
+    // (undocumented)
+    onUnitsChange?: (format: FormatProps) => void;
+    // (undocumented)
+    persistenceUnit?: UnitProps;
+    // (undocumented)
+    unitsProvider: UnitsProvider;
+}
+
 // @public
 export function from<T>(iterable: Iterable<T> | PromiseLike<T>): Observable<T>;
 
@@ -2032,14 +2140,6 @@ export interface HighlightableTreeNodeProps {
 export interface HighlightableTreeProps {
     // (undocumented)
     activeMatch?: ActiveMatchInfo;
-    // (undocumented)
-    searchText: string;
-}
-
-// @beta
-export interface HighlightedRecordProps {
-    // (undocumented)
-    activeMatch?: PropertyRecordMatchInfo;
     // (undocumented)
     searchText: string;
 }
@@ -2336,14 +2436,16 @@ export class IntTypeConverter extends NumericTypeConverterBase {
     convertToString(value?: Primitives.Int): string;
 }
 
-// @alpha
+// @beta
 export interface IPropertyDataFilterer {
+    // (undocumented)
+    categoryMatchesFilter: (node: PropertyCategory, parents: PropertyCategory[]) => Promise<PropertyDataFilterResult>;
     // (undocumented)
     readonly isActive: boolean;
     // (undocumented)
-    matchesFilter: (node: PropertyRecord, parents: PropertyRecord[]) => Promise<PropertyDataFilterResult>;
-    // (undocumented)
     onFilterChanged: PropertyFilterChangeEvent;
+    // (undocumented)
+    recordMatchesFilter: (node: PropertyRecord, parents: PropertyRecord[]) => Promise<PropertyDataFilterResult>;
 }
 
 // @public
@@ -2459,7 +2561,7 @@ export interface ITreeNodeLoaderWithProvider<TDataProvider extends TreeDataProvi
 }
 
 // @alpha
-export class LabelPropertyDataFilterer extends PropertyDataFiltererBase {
+export class LabelPropertyDataFilterer extends PropertyRecordDataFiltererBase {
     constructor(filterText?: string);
     // (undocumented)
     get filterText(): string;
@@ -2467,7 +2569,7 @@ export class LabelPropertyDataFilterer extends PropertyDataFiltererBase {
     // (undocumented)
     get isActive(): boolean;
     // (undocumented)
-    matchesFilter(node: PropertyRecord): Promise<PropertyDataFilterResult>;
+    recordMatchesFilter(node: PropertyRecord): Promise<PropertyDataFilterResult>;
 }
 
 // @public
@@ -2576,6 +2678,25 @@ export interface MilestoneRange {
     end: Date;
     // (undocumented)
     start: Date;
+}
+
+// @alpha
+export function MiscFormatOptions(props: MiscFormatOptionsProps): JSX.Element;
+
+// @alpha
+export interface MiscFormatOptionsProps extends CommonProps {
+    // (undocumented)
+    children?: React.ReactNode;
+    // (undocumented)
+    enableMinimumProperties?: boolean;
+    // (undocumented)
+    formatProps: FormatProps;
+    // (undocumented)
+    onChange?: (format: FormatProps) => void;
+    // (undocumented)
+    onShowHideOptions: (show: boolean) => void;
+    // (undocumented)
+    showOptions: boolean;
 }
 
 // @internal
@@ -2826,9 +2947,9 @@ export interface NavCubeFaceProps extends React.AllHTMLAttributes<HTMLDivElement
 // @public
 export class NavigationPropertyTypeConverter extends TypeConverter {
     // (undocumented)
-    convertPropertyToString(propertyDescription: PropertyDescription, value?: Primitives.Hexadecimal): string;
+    convertPropertyToString(propertyDescription: PropertyDescription, value?: Primitives.Value): string;
     // (undocumented)
-    sortCompare(a: Primitives.Hexadecimal, b: Primitives.Hexadecimal, ignoreCase?: boolean): number;
+    sortCompare(a: Primitives.Value, b: Primitives.Value, ignoreCase?: boolean): number;
 }
 
 // @public
@@ -3147,7 +3268,7 @@ export function PrimitivePropertyValueRendererImpl(props: PrimitivePropertyValue
 // @public
 export interface PrimitiveRendererProps extends SharedRendererProps {
     // @beta
-    highlightProps?: HighlightedRecordProps;
+    highlight?: HighlightingComponentProps;
     indentation?: number;
     valueElement?: React.ReactNode;
     valueElementRenderer?: () => React.ReactNode;
@@ -3177,7 +3298,27 @@ export class PropertyCategoryBlock extends React.Component<PropertyCategoryBlock
 // @public
 export interface PropertyCategoryBlockProps extends CommonProps {
     category: PropertyCategory;
+    // @beta
+    highlight?: HighlightingComponentProps;
     onExpansionToggled?: (categoryName: string) => void;
+}
+
+// @beta
+export abstract class PropertyCategoryDataFiltererBase extends PropertyDataFiltererBase {
+    // (undocumented)
+    recordMatchesFilter(): Promise<PropertyDataFilterResult>;
+}
+
+// @alpha
+export class PropertyCategoryLabelFilterer extends PropertyCategoryDataFiltererBase {
+    constructor(filterText?: string);
+    // (undocumented)
+    categoryMatchesFilter(node: PropertyCategory): Promise<PropertyDataFilterResult>;
+    // (undocumented)
+    get filterText(): string;
+    set filterText(value: string);
+    // (undocumented)
+    get isActive(): boolean;
 }
 
 // @public
@@ -3213,22 +3354,22 @@ export class PropertyDataChangeEvent extends BeEvent<PropertyDataChangesListener
 // @public
 export type PropertyDataChangesListener = () => void;
 
-// @alpha
+// @beta
 export abstract class PropertyDataFiltererBase implements IPropertyDataFilterer {
+    // (undocumented)
+    abstract categoryMatchesFilter(node: PropertyCategory, parents: PropertyCategory[]): Promise<PropertyDataFilterResult>;
     // (undocumented)
     abstract get isActive(): boolean;
     // (undocumented)
-    abstract matchesFilter(node: PropertyRecord, parents: PropertyRecord[]): Promise<PropertyDataFilterResult>;
-    // (undocumented)
     onFilterChanged: PropertyFilterChangeEvent;
+    // (undocumented)
+    abstract recordMatchesFilter(node: PropertyRecord, parents: PropertyRecord[]): Promise<PropertyDataFilterResult>;
 }
 
-// @alpha
+// @beta
 export interface PropertyDataFilterResult {
-    matchesCount?: {
-        label?: number;
-        value?: number;
-    };
+    filteredTypes?: FilteredType[];
+    matchesCount?: number;
     matchesFilter: boolean;
     shouldExpandNodeParents?: boolean;
     shouldForceIncludeDescendants?: boolean;
@@ -3291,11 +3432,11 @@ export interface PropertyEditorProps extends CommonProps {
     setFocus?: boolean;
 }
 
-// @alpha
+// @beta
 export class PropertyFilterChangeEvent extends BeEvent<PropertyFilterChangesListener> {
 }
 
-// @alpha
+// @beta
 export type PropertyFilterChangesListener = () => void;
 
 // @public
@@ -3407,16 +3548,9 @@ export interface PropertyPopupState {
 }
 
 // @beta
-export interface PropertyRecordMatchInfo {
+export abstract class PropertyRecordDataFiltererBase extends PropertyDataFiltererBase {
     // (undocumented)
-    matchCounts: {
-        label: number;
-        value: number;
-    };
-    // (undocumented)
-    matchIndex: number;
-    // (undocumented)
-    propertyName: string;
+    categoryMatchesFilter(): Promise<PropertyDataFilterResult>;
 }
 
 // @public
@@ -3438,7 +3572,7 @@ export class PropertyRenderer extends React.Component<PropertyRendererProps, Pro
 // @public
 export interface PropertyRendererProps extends SharedRendererProps {
     // @beta
-    highlightProps?: HighlightedRecordProps;
+    highlight?: HighlightingComponentProps;
     indentation?: number;
     // @beta
     isEditing?: boolean;
@@ -3504,6 +3638,22 @@ export interface PropertyViewProps extends SharedRendererProps {
     valueElementRenderer?: () => React.ReactNode;
 }
 
+// @alpha
+export function QuantityFormatPanel(props: QuantityFormatPanelProps): JSX.Element;
+
+// @alpha
+export interface QuantityFormatPanelProps extends CommonProps {
+    // (undocumented)
+    enableMinimumProperties?: boolean;
+    // (undocumented)
+    initialMagnitude?: number;
+    // (undocumented)
+    onFormatChange?: (format: FormatProps) => void;
+    // (undocumented)
+    quantityType: QuantityTypeArg;
+    showSample?: boolean;
+}
+
 // @beta
 export function QuantityInput({ initialValue, quantityType, readonly, className, style, onQuantityChange, ref }: QuantityProps): JSX.Element;
 
@@ -3511,7 +3661,7 @@ export function QuantityInput({ initialValue, quantityType, readonly, className,
 export interface QuantityProps extends CommonProps {
     initialValue: number;
     onQuantityChange: (newQuantityValue: number) => void;
-    quantityType: QuantityType;
+    quantityType: QuantityTypeArg;
     readonly?: boolean;
     ref?: React.Ref<HTMLInputElement>;
 }
@@ -4436,7 +4586,7 @@ export class Timeline extends React.Component<TimelineProps, TimelineState> {
 }
 
 // @alpha
-export class TimelineComponent extends React.PureComponent<TimelineComponentProps, TimelineComponentState> {
+export class TimelineComponent extends React.Component<TimelineComponentProps, TimelineComponentState> {
     constructor(props: TimelineComponentProps);
     // (undocumented)
     componentDidUpdate(prevProps: TimelineComponentProps): void;
@@ -4444,6 +4594,8 @@ export class TimelineComponent extends React.PureComponent<TimelineComponentProp
     componentWillUnmount(): void;
     // (undocumented)
     render(): JSX.Element;
+    // (undocumented)
+    shouldComponentUpdate(nextProps: TimelineComponentProps, nextState: TimelineComponentState): boolean;
     }
 
 // @alpha
@@ -4734,7 +4886,7 @@ export class TreeDataSource implements IDisposable {
     // (undocumented)
     dispose(): void;
     // (undocumented)
-    readonly onItemsChanged: BeUiEvent<TreeDataChangesListener>;
+    readonly onItemsChanged: BeEvent<TreeDataChangesListener>;
     // (undocumented)
     requestItems(parent: TreeNodeItem | undefined, firstItemIndex: number, numItems: number, requestNumChildren: boolean): Observable_2<TreeDataSourceResult>;
 }
@@ -5459,7 +5611,9 @@ export interface VirtualizedPropertyGridContext {
         isResizeHandleBeingDragged?: boolean;
         onResizeHandleDragChanged?: (isDragStarted: boolean) => void;
         columnInfo?: PropertyGridColumnInfo;
-        highlightedRecordProps?: HighlightedRecordProps;
+        highlight?: HighlightingComponentProps & {
+            filteredTypes?: FilteredType[];
+        };
     };
     // (undocumented)
     gridEventHandler: IPropertyGridEventHandler;
@@ -5490,7 +5644,9 @@ export interface VirtualizedPropertyGridProps extends CommonPropertyGridProps {
     // (undocumented)
     eventHandler: IPropertyGridEventHandler;
     // (undocumented)
-    highlightedRecordProps?: HighlightedRecordProps;
+    highlight?: HighlightingComponentProps & {
+        filteredTypes?: FilteredType[];
+    };
     // (undocumented)
     model: IPropertyGridModel;
 }
@@ -5503,7 +5659,9 @@ export interface VirtualizedPropertyGridWithDataProviderProps extends CommonProp
     // (undocumented)
     dataProvider: IPropertyDataProvider;
     // (undocumented)
-    highlightedRecordProps?: HighlightedRecordProps;
+    highlight?: HighlightingComponentProps & {
+        filteredTypes?: FilteredType[];
+    };
 }
 
 // @beta

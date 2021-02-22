@@ -11,6 +11,7 @@ import {
 } from "@bentley/presentation-common";
 import { Presentation } from "@bentley/presentation-frontend";
 import { initialize, terminate } from "../IntegrationTests";
+import { findFieldByLabel } from "../Utils";
 
 import sinon = require("sinon");
 
@@ -20,7 +21,8 @@ describe("Content", () => {
 
   let imodel: IModelConnection;
   const openIModel = async () => {
-    imodel = await SnapshotConnection.openFile("assets/datasets/Properties_60InstancesWithUrl2.ibim");
+    if (!imodel || !imodel.isOpen)
+      imodel = await SnapshotConnection.openFile("assets/datasets/Properties_60InstancesWithUrl2.ibim");
     expect(imodel).is.not.null;
   };
 
@@ -30,6 +32,7 @@ describe("Content", () => {
   });
 
   after(async () => {
+    await imodel.close();
     await terminate();
   });
 
@@ -423,7 +426,8 @@ describe("Content", () => {
       });
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+      await imodel.close();
       raceStub.restore();
     });
 
@@ -570,27 +574,4 @@ class ECClassHierarchy {
       derivedClassIds: this.getAllDerivedClassIds(id),
     };
   }
-}
-
-function findFieldByLabel(fields: Field[], label: string, allFields?: Field[]): Field | undefined {
-  const isTopLevel = (undefined === allFields);
-  if (!allFields)
-    allFields = new Array<Field>();
-  for (const field of fields) {
-    if (field.label === label)
-      return field;
-
-    if (field.isNestedContentField()) {
-      const nestedMatchingField = findFieldByLabel(field.nestedFields, label, allFields);
-      if (nestedMatchingField)
-        return nestedMatchingField;
-    }
-
-    allFields.push(field);
-  }
-  if (isTopLevel) {
-    // eslint-disable-next-line no-console
-    console.error(`Field '${label}' not found. Available fields: [${allFields.map((f) => `"${f.label}"`).join(", ")}]`);
-  }
-  return undefined;
 }

@@ -15,7 +15,7 @@ import { SpatialClassifiers } from "../SpatialClassifiers";
 import { SceneContext } from "../ViewContext";
 import { ViewState } from "../ViewState";
 import {
-  IModelTileTree, iModelTileTreeParamsFromJSON, TileTree, TileTreeLoadStatus, TileTreeOwner, TileTreeReference, TileTreeSet, TileTreeSupplier,
+  DisclosedTileTreeSet, IModelTileTree, iModelTileTreeParamsFromJSON, TileTree, TileTreeLoadStatus, TileTreeOwner, TileTreeReference, TileTreeSupplier,
 } from "./internal";
 
 interface ClassifierTreeId extends ClassifierTileTreeId {
@@ -31,12 +31,13 @@ function compareIds(lhs: ClassifierTreeId, rhs: ClassifierTreeId): number {
 }
 
 class ClassifierTreeSupplier implements TileTreeSupplier {
-  private readonly _nonexistentTreeOwner: TileTreeOwner = {
+  private readonly _nonexistentTreeOwner = {
     tileTree: undefined,
     loadStatus: TileTreeLoadStatus.NotFound,
     load: () => undefined,
     dispose: () => undefined,
     loadTree: async () => undefined,
+    iModel: undefined as unknown as IModelConnection,
   };
 
   public compareTileTreeIds(lhs: ClassifierTreeId, rhs: ClassifierTreeId): number {
@@ -110,7 +111,7 @@ class ClassifierTreeReference extends SpatialClassifierTileTreeReference {
     return this._owner;
   }
 
-  public discloseTileTrees(trees: TileTreeSet): void {
+  public discloseTileTrees(trees: DisclosedTileTreeSet): void {
     // NB: We do NOT call super because we don't use our tree if no classifier is active.
     trees.disclose(this._classifiedTree);
 

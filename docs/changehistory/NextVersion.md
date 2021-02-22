@@ -1,73 +1,108 @@
 ---
-ignore: true
+publish: false
 ---
 # NextVersion
 
-## Tile compression
+## GPU memory limits
 
-[IModelHostConfiguration.compressCachedTiles]($backend) specifies whether tiles uploaded to blob storage should be compressed using gzip. Previously, it defaulted to `false` if omitted. The default has now been switched to `true`. Compressing tiles conserves bandwidth; the tiles are transparently and efficiently decompressed by the browser.
+The [RenderGraphic]($frontend)s used to represent a [Tile]($frontend)'s contents consume WebGL resources - chiefly, GPU memory. If the amount of GPU memory consumed exceeds that available, the WebGL context will be lost, causing an error dialog to be displayed and all rendering to cease. The [TileAdmin]($frontend) can now be configured with a strategy for managing the amount of GPU memory consumed and avoiding context loss. Each strategy defines a maximum amount of GPU memory permitted to be allocated to tile graphics; when that limit is exceeded, graphics for tiles that are not currently being displayed by any [Viewport]($frontend) are discarded one by one until the limit is satisfied or no more tiles remain to be discarded. Graphics are discarded in order from least-recently- to most-recently-displayed, and graphics currently being displayed will not be discarded. The available strategies are:
 
-## Changes to display style excluded elements
+- "default" - a "reasonable" amount of GPU memory can be consumed.
+- "aggressive" - a conservative amount of GPU memory can be consumed.
+- "relaxed" - a generous amount of GPU memory can be consumed.
+- "none" - an unbounded amount of GPU memory can be consumed - no maximum is imposed.
 
-[DisplayStyleSettings.excludedElements]($common) allows a display style to specify a set of elements that should not be drawn. Previously, this set was always persisted to the database as an array of element Ids, and represented in JSON and in memory as a `Set<string>`. However, element Ids tend to be long strings (at least 13 characters), and sets of excluded elements can occasionally grow quite large. To reduce the amount of data associated with these sets:
-  * They are now always persisted to the database as a [CompressedId64Set]($bentleyjs-core).
-  * The type of [DisplayStyleSettingsProps.excludedElements]($common) has changed from `Id64Array` to `Id64Array | CompressedId64Set`.
-  * [DisplayStyleSettings.excludedElements]($common) - a `Set<string>` - has been deprecated in favor of [DisplayStyleSettings.excludedElementsIds]($common) - an [OrderedId64Iterable]($bentleyjs-core).
-  * [IModelDb.views.getViewStateData]($backend) and [ElementLoadProps]($backend) allow the caller to specify whether the Ids should be returned in compressed (string) form or as an uncompressed array; by default, they are uncompressed.
-  * [IModelConnection.views.load]($frontend) will always use the compressed representation of the Ids.
+The precise amount of memory permitted by each strategy varies based on whether or not the client is running on a mobile device; see [TileAdmin.mobileGpuMemoryLimits]($frontend) and [TileAdmin.nonMobileGpuMemoryLimits]($frontend) for precise values. The application can also specify an exact amount in number of bytes instead.
 
-To adjust code that uses [DisplayStyleSettings.excludedElements]($common), given `settings: DisplayStyleSettings`:
+The limit defaults to "default" for mobile devices and "none" for non-mobile devices. To configure the limit when calling [IModelApp.startup]($frontend), specify [TileAdmin.Props.gpuMemoryLimits]($frontend). For example:
+
 ```ts
-  settings.excludedElements.add(id); // Replace this...
-  settings.addExcludedElements(id); // ...with this.
-
-  settings.excludedElements.delete(id); // Replace this...
-  settings.dropExcludedElements(id); // ...with this.
-
-  settings.excludedElements.clear(); // Replace this...
-  settings.clearExcludedElements(); // ...with this.
-
-  for (const id of settings.excludedElements) { } // Replace this...
-  for (const id of settings.excludedElementIds) { } // ...with this.
+  IModelApp.startup({ tileAdmin: TileAdmin.create({ gpuMemoryLimits: "aggressive" }) });
 ```
 
-Note that [DisplayStyleSettings.addExcludedElements]($common) and [DisplayStyleSettings.dropExcludedElements]($common) can accept any number of Ids. If you have multiple Ids, prefer to pass them all at once rather than one at a time - it is more efficient.
+Separate limits for mobile and non-mobile devices can be specified at startup if desired; the appropriate limit will be selected based on the type of device the client is running on:
 
-## Breaking API changes
-
-* The union type [Matrix3dProps]($geometry-core) inadvertently included [Matrix3d]($geometry-core). "Props" types are wire formats and so must be pure JavaScript primitives. To fix compilation errors where you are using `Matrix3d` where a `Matrix3dProps` is expected, simply call [Matrix3d.toJSON]($geometry-core) on your Matrix3d object. Also, since [TransformProps]($geometry-core) includes Matrix3dProps, you may need to call [Transform.toJSON]($geometry-core) on your Transform objects some places too.
-
-* The type of [Texture.data]($backend) has been corrected from `string` to `Uint8Array` to match the type in the BIS schema. If you get compilation errors, simply remove calls to `Buffer.from(texture.data, "base64")` for read, and `texture.data.toString("base64")` if you create texture objects.
-
-## Updated version of Electron
-
-Updated version of electron used from 8.2.1 to 10.1.3. Note that Electron is specified as a peer dependency in the iModel.js stack - so it's recommended but not mandatory that applications migrate to this electron version.
-
-## Globe location tool fixes
-
-The globe location tools now will properly use GCS reprojection when navigating. Previously, navigating to certain cartographic locations within the iModel extents could be slightly inaccurate.
-
-The tools affected are:
-
-* [ViewGlobeSatelliteTool]($frontend)
-* [ViewGlobeBirdTool]($frontend)
-* [ViewGlobeLocationTool]($frontend)
-* [ViewGlobeIModelTool]($frontend)
-
-The [ViewGlobeLocationTool]($frontend) has been further improved to navigate better across long distances when using plane mode.
-
-There is now a method called `lookAtGlobalLocationFromGcs` on [ViewState3d]($frontend). This method behaves exactly like `lookAtGlobalLocation` except that is async and uses the GCS to reproject the location.
-
-[ViewState3d]($frontend) also has GCS versions of these methods:
-
-* `rootToCartographicFromGcs` behaves like `rootToCartographic` except it is async and uses the GCS to reproject the location.
-* `cartographicToRootFromGcs` behaves like `cartographicToRoot` except it is async and uses the GCS to reproject the location.
-
-## Presentation
-
-### Formatted property values in ECExpressions
-
-ECExpressions now support formatted property values. `GetFormattedValue` function can be used in ECExpressions to get formatted value of the property. This adds ability to filter instances by some formatted value:
+```ts
+  IModelApp.startup({ tileAdmin: TileAdmin.create({
+    gpuMemoryLimits: {
+      mobile: "default",
+      nonMobile: "relaxed",
+    }),
+  });
 ```
-GetFormattedValue(this.Length, "Metric") = "10.0 m"
+
+To adjust the limit after startup, assign to [TileAdmin.gpuMemoryLimit]($frontend).
+
+This feature replaces the `@alpha` `TileAdmin.Props.mobileExpirationMemoryThreshold` option.
+
+## IModelHost and IModelApp Initialization Changes
+
+Initialization processing of iModel.js applications, and in particular the order of individual steps for frontend and backend classes has been complicated and vague, involving several steps that vary depending on application type and platform. This release attempts to clarify and simplify that process, while maintaining backwards compatibility. In general, if your code uses [IModelHost.startup]($backend) and [IModelApp.startup]($frontend) for web visualization, it will continue to work without changes. However, for native (desktop and mobile) apps, some refactoring may be necessary. See [IModelHost documentation]($docs/learning/backend/IModelHost.md) for appropriate backend initialization, and [IModelApp documentation]($docs/learning/frontend/IModelApp.md) for frontend initialization.
+
+The `@beta` API's for desktop applications to use Electron via the `@bentley/electron-manager` package have been simplified substantially. Existing code will need to be adjusted to work with this version. The class `ElectronManager` has been removed, and it is now replaced with the classes `ElectronHost` and `ElectronApp`.
+
+To create an Electron application, you should initialize your frontend via:
+
+```ts
+  import { ElectronApp } from "@bentley/electron-manager/lib/ElectronFrontend";
+  ...
+  await ElectronApp.startup();
 ```
+
+And your backend via:
+
+```ts
+  import { ElectronHost } from "@bentley/electron-manager/lib/ElectronBackend";
+  ...
+  await ElectronHost.startup();
+```
+
+Likewise, to create an iOS application, you should initialize your frontend via:
+
+```ts
+  import { IOSApp } from "@bentley/mobile-manager/lib/MobileFrontend";
+  ...
+  await IOSApp.startup();
+```
+
+And your backend via:
+
+```ts
+  import { IOSHost } from "@bentley/mobile-manager/lib/MobileBackend";
+  ...
+  await IOSHost.startup();
+```
+
+Both frontend and backend `startup` methods take optional arguments to customize the App/Host environments.
+
+## ProcessDetector API
+
+It is frequently necessary to detect the type of JavaScript process currently executing. Previously, there were several ways (sometimes redundant, sometimes conflicting) to do that, depending on the subsystem being used. This release attempts to centralize process classification into the class [ProcessDetector]($bentley) in the `@bentleyjs-core` package. All previous methods for detecting process type have been deprecated in favor of `ProcessDetector`. The deprecated methods will likely be removed in version 3.0.
+
+## Common table expression support in ECSQL
+
+CTE are now supported in ECSQL. For more information read [Common Table Expression](..\learning\CommonTableExp.md)
+
+## Breaking Api Changes
+
+### Quantity package
+
+The alpha interface `ParseResult` has changed to `QuantityParserResult` which can either be a `ParseQuantityError` or a `ParsedQuantity`.
+New static type guards `Parser.isParsedQuantity` and `Parser.isParseError` can be used to coerce the result into the appropriate type.
+
+### Frontend package
+
+The alpha class QuantityFormatter now registers its own standard QuantityTypeDefinitions during initialization. CustomQuantityTypeDefinitions must now be registered to support additional QuantityTypes. This replaces the use of FormatterParserSpecsProvider to provide custom quantity types. Removed koq methods that were never implemented.
+
+### IModelHostConfiguration.applicationType
+
+The type of the internal member `IModelHostConfiguration.applicationType` had a redundant declaration in `IModelHost.ts`. It is now correctly declared to be of type `IModelJsNative.ApplicationType`. The names of the members were the same, so this will not likely cause problems.
+
+### IModelTransformer and IModelExporter APIs are now async
+
+The *export* methods of [IModelExporter]($backend) and the *process* methods of [IModelTransformer]($backend) are now `async`. This is a breaking API change.
+While exporting and transforming should generally be considered *batch* operations, changing these methods to `async` makes progress reporting and process health monitoring much easier.
+This is particularly important when processing large iModels.
+
+To react to the changes, add an `await` before each `IModelExporter.export*` and `IModelTransformer.process*` method call and make sure they are called from within an `async` method.
+No internal logic was changed, so that should be the only changes required.

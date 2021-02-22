@@ -12,6 +12,9 @@ export class AbandonedError extends Error {
 export const addClientRequestContext: (metaData: any) => void;
 
 // @public
+export function areEqualPossiblyUndefined<T, U>(t: T | undefined, u: U | undefined, areEqual: (t: T, u: U) => boolean): boolean;
+
+// @public
 export function asInstanceOf<T>(obj: any, constructor: Constructor<T>): T | undefined;
 
 // @beta
@@ -63,7 +66,7 @@ export class BeEvent<T extends Listener> {
     clear(): void;
     has(listener: T, scope?: any): boolean;
     get numberOfListeners(): number;
-    raiseEvent(...args: any[]): void;
+    raiseEvent(...args: Parameters<T>): void;
     removeListener(listener: T, scope?: any): boolean;
 }
 
@@ -198,7 +201,7 @@ export enum ChangeSetStatus {
     NoTransactions = 90127,
     ParentMismatch = 90128,
     ProcessSchemaChangesOnOpen = 90134,
-    ReverseOrReinstateSchemaChangesOnOpen = 90133,
+    ReverseOrReinstateSchemaChanges = 90133,
     SQLiteError = 90129,
     // (undocumented)
     Success = 0,
@@ -858,6 +861,8 @@ export enum IModelStatus {
     // (undocumented)
     ForeignKeyConstraint = 65553,
     // (undocumented)
+    FunctionNotFound = 65606,
+    // (undocumented)
     IdExists = 65554,
     // (undocumented)
     IMODEL_ERROR_BASE = 65536,
@@ -892,6 +897,8 @@ export enum IModelStatus {
     // (undocumented)
     MissingId = 65569,
     // (undocumented)
+    NoActiveCommand = 65607,
+    // (undocumented)
     NoContent = 65604,
     // (undocumented)
     NoGeoLocation = 65602,
@@ -913,6 +920,8 @@ export enum IModelStatus {
     NotOpen = 65575,
     // (undocumented)
     NotOpenForWrite = 65576,
+    // (undocumented)
+    NotRegistered = 65605,
     // (undocumented)
     NotSameUnitBase = 65577,
     // (undocumented)
@@ -996,10 +1005,10 @@ export class IndexMap<T> {
     protected readonly _maximumSize: number;
 }
 
-// @internal
+// @internal @deprecated
 export const isElectronMain: boolean;
 
-// @internal
+// @internal @deprecated
 export const isElectronRenderer: boolean;
 
 // @public
@@ -1018,6 +1027,7 @@ export namespace JsonUtils {
     export function asString(json: any, defaultVal?: string): string;
     export function isEmptyObject(json: any): boolean;
     export function isEmptyObjectOrUndefined(json: any): boolean;
+    export function isNonEmptyObject(value: any): value is Object;
     export function setOrRemoveBoolean(json: any, key: string, val: boolean, defaultVal: boolean): void;
     export function setOrRemoveNumber(json: any, key: string, val: number, defaultVal: number): void;
     export function toObject(val: any): any;
@@ -1195,6 +1205,14 @@ export namespace OrderedId64Iterable {
     export function uniqueIterator(ids: OrderedId64Iterable): Generator<string, void, unknown>;
 }
 
+// @public
+export class OrderedSet<T> extends ReadonlyOrderedSet<T> {
+    constructor(compare: OrderedComparator<T>, clone?: CloneFunction<T>);
+    add(value: T): this;
+    clear(): void;
+    delete(value: T): boolean;
+}
+
 // @beta
 export function partitionArray<T>(array: T[], criterion: (element: T) => boolean): number;
 
@@ -1229,6 +1247,35 @@ export class PriorityQueue<T> implements Iterable<T> {
     sort(): void;
     // (undocumented)
     protected _swap(a: number, b: number): void;
+}
+
+// @beta
+export class ProcessDetector {
+    static get isAndroidAppBackend(): boolean;
+    static get isAndroidAppFrontend(): boolean;
+    static get isAndroidBrowser(): boolean;
+    static get isBrowserProcess(): boolean;
+    static get isElectronAppBackend(): boolean;
+    static get isElectronAppFrontend(): boolean;
+    static get isIOSAppBackend(): boolean;
+    static get isIOSAppFrontend(): boolean;
+    static get isIOSBrowser(): boolean;
+    static get isIPadBrowser(): boolean;
+    static get isIPhoneBrowser(): boolean;
+    static get isMobileAppBackend(): boolean;
+    static get isMobileAppFrontend(): boolean;
+    static get isMobileBrowser(): boolean;
+    static get isNodeProcess(): boolean;
+}
+
+// @public
+export class ReadonlyOrderedSet<T> implements Iterable<T> {
+    [Symbol.iterator](): Iterator<T>;
+    constructor(compare: OrderedComparator<T>, clone?: CloneFunction<T>);
+    // (undocumented)
+    protected readonly _array: SortedArray<T>;
+    has(value: T): boolean;
+    get size(): number;
 }
 
 // @public

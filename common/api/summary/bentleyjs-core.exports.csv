@@ -2,6 +2,7 @@ sep=;
 Release Tag;API Item
 beta;AbandonedError 
 internal;addClientRequestContext: (metaData: any) => void
+public;areEqualPossiblyUndefined
 public;asInstanceOf
 beta;assert(condition: boolean, msg?: string): asserts condition
 alpha;AsyncMutex
@@ -88,9 +89,12 @@ public;OpenMode
 public;OrderedComparator
 beta;OrderedId64Iterable = Iterable
 beta;OrderedId64Iterable
+public;OrderedSet
 beta;partitionArray
 public;PerfLogger 
 public;PriorityQueue
+beta;ProcessDetector
+public;ReadonlyOrderedSet
 public;ReadonlySortedArray
 beta;RepositoryStatus
 beta;RpcInterfaceStatus

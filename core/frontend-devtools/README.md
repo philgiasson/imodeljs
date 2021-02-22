@@ -13,11 +13,13 @@ Because this is a developer-only package, its functionality is not expected to e
 * /src/FrontendDevTools.ts - entry point for initializing the package.
 * /src/ui/ - rudimentary basic html controls used to build the widgets.
 * /src/tools/ - a collection of immediate-mode and interactive-mode tools. All of the tools' key-in strings begin with "fdt" (as in, "Front-end Dev Tools").
+* /src/effects/ - a collection of screen-space post-processing effects that alter the image produced by a Viewport.
 * /src/widgets/ - widgets that wrap some of the package's functionality into embeddable UI controls, including:
   * `KeyinField` - allows any tool to be executed by typing in its keyin string (with autocompletion).
   * `FpsTracker` - displays the average frames-per-second.
   * `TileStatisticsTracker` - displays the state of tile requests in the system.
   * `MemoryTracker` - displays statistics about GPU memory allocated by the display system.
+  * `TileMemoryBreakdown` - breaks down GPU memory used by tiles based on their relationship to the set of displayed tiles.
   * `GpuProfiler` - displays GPU timing queries and allows recording for viewing in chrome://tracing. See https://aras-p.info/blog/2017/01/23/Chrome-Tracing-as-Profiler-Frontend/ for more information.
   * `DiagnosticsPanel` - combines all of the above widgets into a single panel.
 
@@ -52,6 +54,8 @@ The key-ins below enable, disable, or toggle a specific feature. They take at mo
 
 * `fdt project extents` - Toggles display of a decoration illustrating the iModel's project extents.
 * `fdt freeze scene` - Toggles scene freeze for the active viewport. While scene freeze is enabled, the same set of tiles will continue to be displayed until the scene is unfrozen - no new tiles will be loaded. Useful for zooming in or out to inspect geometry inside specific tiles.
+* `fdt section cut` - Specify whether a clip volume applied to the view should produce cut geometry at intersections with the design models. This controls `ViewState.details.clipStyle.produceCutGeometry`.
+* `fdt particle snow` - Toggle a particle effect simulating snowfall for the active viewport.
 * `fdt frustum selected` - Toggles a decoration representing the current frustum of the selected viewport. The decoration is displayed in any *other* open viewports - so if no other viewports are open, this key-in has no effect.
 * `fdt shadow frustum` - Like `fdt frustum selected`, but visualizes the frustum used to select tiles for the shadow map (when shadows are enabled).
 * `fdt frustum snapshot` - Toggles a decoration representing the current frustum of the active viewport. The decoration remains displayed until it is toggled back off. `fdt frustum selected` is much more useful, but requires at least two open viewports.  Including `fdt snapshot preload` will also display the preload frustum decoration.
@@ -65,12 +69,42 @@ The key-ins below enable, disable, or toggle a specific feature. They take at mo
 * `fdt dpi lod` - Toggles whether device pixel ratio should be taken into account when computing LOD for tiles and decoration graphics.
 * `fdt attachments` - Toggles display of view attachments in the sheet view associated with the active viewport.
 * `fdt attachment bounds` - Toggles display of bounding boxes around each view attachment in the active viewport.
+* `fdt drawing graphics` - When enabled, 2d graphics in any drawing view will not be displayed. Useful for inspecting 3d graphics of attached section view, if any.
+* `fdt sectiondrawing spatial view` - When enabled, 3d graphics for a section drawing will be displayed in the drawing view, even if they otherwise wouldn't be.
 * `fdt toggle drapefrustum` - Toggles display of frustum that is used to drape classifiers and background map.
 * `fdt toggle reality preload` - Toggles the display of preloaded reality tile bounding boxes.
 * `fdt toggle reality freeze`  - Toggles the freezing of reality tile loading, when the reality tiles are frozen new reality tiles are not downloaded or purged.
 * `fdt toggle reality logging` - Toggle the logging of reality tile loading and selection diagnostics to the console.
 * `fdt toggle reality bounds` - Toggle the display of bounding boxes for reality tiles.
 * `fdt set building display` Toggle the display of the worldwide OpenStreetMap worldwide buildingslayer by attaching or displaying as a reality model in the current viewport.  The OSM buildings are aggregated and supplied from Cesium Ion <https://cesium.com/content/cesium-osm-buildings/>. The first argument is required on|off - the second optional argument is a value for transparency between 0 and 1.
+
+### Screen-space effect key-ins
+
+This package supplies several examples of screen-space post-processing effects that alter the image presented by a Viewport, exposed via the following key-ins:
+
+* `fdt effect add` - append the specified effect to the selected viewport's list of effects. Effects are applied in the order in which they appear in that list. Available effect names are:
+  * "lensdistortion" - simulates the "fish-eye" distortion produced by real-world cameras with very wide fields of view.
+  * "saturation" - adjusts the saturation of each pixel in the image.
+  * "vignette" - applies a vignette effect.
+  * "flip" - mostly useless except for demonstration purposes: flips the image horizontally and/or vertically, and/or inverts the color of each pixel.
+  * Six "convolution kernel" effects that alter the image by blending neighboring pixels in different ways: "blur", "sharpen", "unsharpen", "emboss", "edgedetect", and "sharpness".
+* `fdt effect clear` - remove all effects from the selected viewport.
+* `fdt effect config saturation` - configure the saturation effect. Accepts one argument of the form `multiplier=x` where `x` is a floating point number by which to multiply each color's saturation. The default multiplier is 2.0.
+* `fdt effect config vignette` - configure the vignette effect - see `VignetteConfig` for details on the setting. Accepts any combination of the following arguments where each takes a floating point value in [0..1]; if an argument is omitted then the corresponding setting retains its current value: "width", "height", "smoothness", "roundness". e.g., `fdt effect config vignette smoothness=0.5`.
+* `fdt effect config flip` - configure the "flip" effect. Accepts any combination of the following arguments; any argument omitted defaults to 0.
+  * "horizontal=0|1" - 1 to flip horizontally.
+  * "vertical=0|1" - 1  to flip vertically.
+  * "color=0|1" - 1 to invert each pixel's color.
+* `fdt effect config lensdistortion` - configure the lens distortion effect. Accepts any combination of the following arguments, any argument omitted defaults to 0.5.
+  * "strength=[0..1]" - the magnitude of the distortion. 0 = perspective; 1 = stereographic.
+  * "ratio=[0..1]" - the cylindrical ratio of the distortion. 1 = spherical.
+
+### Particle effect key-ins
+
+This package supplies a couple of examples illustrating how to implement particle effects using decorators, exposed via the following key-ins:
+
+* `fdt particle snow` - Toggle a snowfall effect for the active viewport.
+
 ### Other key-ins
 
 * `fdt save view` - Copies to the clipboard a JSON representation of the view currently displayed in the active viewport.
@@ -106,6 +140,7 @@ The key-ins below enable, disable, or toggle a specific feature. They take at mo
 * `fdt isolate selection` - Causes all elements except those currently in the selection set to stop drawing.
 * `fdt clear isolate` - Reverse the effects of `fdt isolate selection`.
 * `fdt toggle wiremesh` - Toggles "pseudo-wiremesh" display. This causes surfaces to be rendered using `GL_LINES` instead of `GL_TRIANGLES`. Useful for visualizing the triangles of a mesh - but not suitable for "real" wiremesh display.
+* `fdt test clip style ON|OFF` - Toggles a ClipStyle for the active viewport with hard-coded symbology overrides.
 * `fdt tile bounds` - Sets the type of bounding volume decorations that will be displayed for each tile displayed in the view. Accepts at most one argument; if none is specified, it defaults to "volume", unless tile bounds are already displayed, in which it toggles them back off.
   * "none": Don't display bounding volumes.
   * "volume": Bounding box representing the full range of each tile.
@@ -119,6 +154,7 @@ The key-ins below enable, disable, or toggle a specific feature. They take at mo
   * "v", "h": The visible or hidden ratio in [0..1].
   * "s": The silhouette as an integer in [0..2] (see Hilite.Silhouette enum).
 * `fdt emphasis settings` - Modifies the hilite settings used for emphasized elements in the selected viewport. If no arguments are specified, it does nothing. See `fdt hilite settings` for supported arguments.
+* `fdt gpu mem limit` - Changes the value of `TileAdmin.gpuMemoryLimit` controlling how much GPU memory can be allocated to tile graphics before graphics of least-recently-drawn tiles begin to be discarded. Accepts one integer greater than or equal to zero representing the amount of memory in bytes; or one of "default", "relaxed", "aggressive", or "none". Any other input is treated as "none".
 * `fdt tilesize default` - Changes the default tile size modifier used by viewports that don't explicitly override it. Accepts a floating point number greater than zero.
 * `fdt tilesize viewport` - Overrides the tile size modifier for the selected viewport (if a floating point number is supplied) or clears the override (if the string "reset" is supplied). The modifier must be greater than zero.
 * `fdt webgl report compatibility` - Opens a modal dialog with information about the client's level of support for various features of the iModel.js display system.

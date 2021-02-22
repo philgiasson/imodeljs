@@ -8,13 +8,13 @@
 
 import { BeTimePoint } from "@bentley/bentleyjs-core";
 import { Matrix4d, Range1d, Range3d, Transform } from "@bentley/geometry-core";
-import { ElementAlignedBox3d, FrustumPlanes, ViewFlagOverrides } from "@bentley/imodeljs-common";
+import { ElementAlignedBox3d, FeatureAppearanceProvider, FrustumPlanes, HiddenLine, ViewFlagOverrides } from "@bentley/imodeljs-common";
 import { HitDetail } from "../HitDetail";
 import { FeatureSymbology } from "../render/FeatureSymbology";
 import { RenderClipVolume } from "../render/RenderClipVolume";
 import { RenderMemory } from "../render/RenderMemory";
 import { DecorateContext, SceneContext } from "../ViewContext";
-import { TileDrawArgs, TileTree, TileTreeLoadStatus, TileTreeOwner, TileTreeSet } from "./internal";
+import { DisclosedTileTreeSet, TileDrawArgs, TileTree, TileTreeLoadStatus, TileTreeOwner } from "./internal";
 
 /** Describes the type of graphics produced by a [[TileTreeReference]].
  * @beta
@@ -44,7 +44,7 @@ export abstract class TileTreeReference /* implements RenderMemory.Consumer */ {
    * Override this and call super if you have such auxiliary trees.
    * @note Any tree *NOT* disclosed becomes a candidate for *purging* (being unloaded from memory along with all of its tiles and graphics).
    */
-  public discloseTileTrees(trees: TileTreeSet): void {
+  public discloseTileTrees(trees: DisclosedTileTreeSet): void {
     const tree = this.treeOwner.tileTree;
     if (undefined !== tree)
       trees.add(tree);
@@ -119,12 +119,18 @@ export abstract class TileTreeReference /* implements RenderMemory.Consumer */ {
     if (undefined === tree)
       return undefined;
 
-    const now = BeTimePoint.now();
-    const location = this.computeTransform(tree);
-    const clipVolume = this.getClipVolume(tree);
-    const viewFlagOverrides = this.getViewFlagOverrides(tree);
-
-    return new TileDrawArgs({ context, location, tree, now, viewFlagOverrides, clipVolume, parentsAndChildrenExclusive: tree.parentsAndChildrenExclusive, symbologyOverrides: this.getSymbologyOverrides(tree) });
+    return new TileDrawArgs({
+      context,
+      tree,
+      now: BeTimePoint.now(),
+      location: this.computeTransform(tree),
+      viewFlagOverrides: this.getViewFlagOverrides(tree),
+      clipVolume: this.getClipVolume(tree),
+      parentsAndChildrenExclusive: tree.parentsAndChildrenExclusive,
+      symbologyOverrides: this.getSymbologyOverrides(tree),
+      appearanceProvider: this.getAppearanceProvider(tree),
+      hiddenLineSettings: this.getHiddenLineSettings(tree),
+    });
   }
 
   /** Supply transform from this tile tree reference's location to iModel coordinate space.
@@ -164,6 +170,16 @@ export abstract class TileTreeReference /* implements RenderMemory.Consumer */ {
 
   /** Return overrides that *replace* any defined for the view. */
   protected getSymbologyOverrides(_tree: TileTree): FeatureSymbology.Overrides | undefined {
+    return undefined;
+  }
+
+  /** Return a provider that can supplement the view's symbology overrides. */
+  protected getAppearanceProvider(_tree: TileTree): FeatureAppearanceProvider | undefined {
+    return undefined;
+  }
+
+  /** Return hidden line settings to replace any defined for the view. */
+  protected getHiddenLineSettings(_tree: TileTree): HiddenLine.Settings | undefined {
     return undefined;
   }
 

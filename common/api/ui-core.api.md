@@ -7,6 +7,7 @@
 import { ActionMeta } from 'react-select/src/types';
 import { BadgeType } from '@bentley/ui-abstract';
 import { BeUiEvent } from '@bentley/bentleyjs-core';
+import { ConditionalBooleanValue } from '@bentley/ui-abstract';
 import { ConditionalStringValue } from '@bentley/ui-abstract';
 import * as CSS from 'csstype';
 import { FocusEventHandler } from 'react-select/src/types';
@@ -351,9 +352,10 @@ export class ContextMenuItem extends React.PureComponent<ContextMenuItemProps, C
     }
 
 // @public
-export interface ContextMenuItemProps extends React.AllHTMLAttributes<HTMLDivElement>, CommonProps {
+export interface ContextMenuItemProps extends Omit<React.AllHTMLAttributes<HTMLDivElement>, "disabled" | "hidden">, CommonProps {
     badgeType?: BadgeType;
-    disabled?: boolean;
+    disabled?: boolean | ConditionalBooleanValue;
+    hidden?: boolean | ConditionalBooleanValue;
     hideIconContainer?: boolean;
     icon?: IconSpec;
     iconRight?: IconSpec;
@@ -376,6 +378,8 @@ export interface ContextMenuProps extends CommonProps {
     edgeLimit?: boolean;
     floating?: boolean;
     hotkeySelect?: boolean;
+    // @internal (undocumented)
+    ignoreNextKeyUp?: boolean;
     onEsc?: (data: any) => any;
     onOutsideClick?: (event: MouseEvent) => any;
     onSelect?: (event: any) => any;
@@ -687,7 +691,9 @@ export interface ExpandableBlockProps extends CommonProps {
     onClick: React.MouseEventHandler<HTMLDivElement>;
     onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
     onKeyPress?: React.KeyboardEventHandler<HTMLDivElement>;
-    title: string;
+    title: string | JSX.Element;
+    // @beta
+    tooltip?: string;
 }
 
 // @public
@@ -1350,12 +1356,11 @@ export type NodeCheckboxRenderProps = Omit<CheckboxProps, "onChange" | "onClick"
 export function NumberInput(props: NumberInputProps): JSX.Element;
 
 // @beta
-export interface NumberInputProps extends Omit<InputProps, "min" | "max" | "step" | "onChange" | "onBlur"> {
+export interface NumberInputProps extends Omit<InputProps, "min" | "max" | "step" | "onChange"> {
     containerClassName?: string;
     format?: (num: number | null | undefined, formattedValue: string) => string;
     max?: number;
     min?: number;
-    onBlur?: React.FocusEventHandler<HTMLInputElement>;
     onChange?: (value: number | undefined, stringValue: string) => void;
     parse?: ((value: string) => number | null | undefined);
     precision?: number;
@@ -1815,9 +1820,16 @@ export interface SearchBoxProps extends CommonProps {
 export function Select(props: SelectProps): JSX.Element;
 
 // @public
+export interface SelectOption {
+    disabled?: boolean;
+    label: string;
+    value?: string | number | readonly string[];
+}
+
+// @public
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement>, CommonProps {
-    options: string[] | {
-        [key: string]: string;
+    options: (string | SelectOption)[] | {
+        [key: string]: (string | SelectOption);
     };
     setFocus?: boolean;
 }
@@ -1867,6 +1879,8 @@ export function Slider(props: SliderProps): JSX.Element;
 // @public
 export interface SliderProps extends CommonProps {
     disabled?: boolean;
+    formatMax?: (value: number) => string;
+    formatMin?: (value: number) => string;
     formatTick?: (tick: number) => string;
     formatTooltip?: (value: number) => string;
     getTickCount?: () => number;
@@ -2437,7 +2451,7 @@ export function WebFontIcon(props: WebFontIconProps): JSX.Element;
 export interface WebFontIconProps extends CommonProps {
     iconClassName?: string;
     iconName: string;
-    iconSize?: "small" | "medium" | "large" | "x-large";
+    iconSize?: "x-small" | "small" | "medium" | "large" | "x-large";
     onClick?: React.MouseEventHandler<HTMLSpanElement>;
     title?: string;
 }

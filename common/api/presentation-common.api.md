@@ -6,6 +6,7 @@
 
 import { BentleyError } from '@bentley/bentleyjs-core';
 import { EntityProps } from '@bentley/imodeljs-common';
+import { FormatProps } from '@bentley/imodeljs-quantity';
 import { GetMetaDataFunction } from '@bentley/bentleyjs-core';
 import { GuidString } from '@bentley/bentleyjs-core';
 import { Id64String } from '@bentley/bentleyjs-core';
@@ -186,11 +187,7 @@ export interface ClassInfoJSON {
 }
 
 // @public
-export type ComputeDisplayValueCallback = (type: string, value: string | number | boolean | {
-    x: number;
-    y: number;
-    z?: number;
-} | undefined, displayValue: string) => Promise<string>;
+export type ComputeDisplayValueCallback = (type: string, value: PrimitivePropertyValue, displayValue: string) => Promise<string>;
 
 // @public
 export interface ConditionContainer {
@@ -815,6 +812,34 @@ export enum GroupingSpecificationTypes {
     SameLabelInstance = "SameLabelInstance"
 }
 
+// @alpha (undocumented)
+export interface HierarchyCompareInfo {
+    // (undocumented)
+    changes: PartialHierarchyModification[];
+    // (undocumented)
+    continuationToken?: {
+        prevHierarchyNode: string;
+        currHierarchyNode: string;
+    };
+}
+
+// @alpha (undocumented)
+export namespace HierarchyCompareInfo {
+    export function fromJSON(json: HierarchyCompareInfoJSON): HierarchyCompareInfo;
+    export function toJSON(obj: HierarchyCompareInfo): HierarchyCompareInfoJSON;
+}
+
+// @alpha (undocumented)
+export interface HierarchyCompareInfoJSON {
+    // (undocumented)
+    changes: PartialHierarchyModificationJSON[];
+    // (undocumented)
+    continuationToken?: {
+        prevHierarchyNode: string;
+        currHierarchyNode: string;
+    };
+}
+
 // @public
 export interface HierarchyRequestOptions<TIModel> extends RequestOptionsWithRuleset<TIModel> {
 }
@@ -1063,7 +1088,7 @@ export interface KeySetJSON {
 // @public
 export interface KindOfQuantityInfo {
     // @alpha
-    currentFormatId: string;
+    activeFormat?: FormatProps;
     label: string;
     name: string;
     // @alpha
@@ -1527,12 +1552,19 @@ export const PRESENTATION_COMMON_ROOT: string;
 // @alpha
 export interface PresentationDataCompareOptions<TIModel, TNodeKey> extends RequestOptionsWithRuleset<TIModel> {
     // (undocumented)
+    continuationToken?: {
+        prevHierarchyNode: string;
+        currHierarchyNode: string;
+    };
+    // (undocumented)
     expandedNodeKeys?: TNodeKey[];
     // (undocumented)
     prev: {
         rulesetOrId?: Ruleset | string;
         rulesetVariables?: RulesetVariable[];
     };
+    // (undocumented)
+    resultSetSize?: number;
 }
 
 // @alpha
@@ -1545,14 +1577,16 @@ export class PresentationError extends BentleyError {
 }
 
 // @alpha (undocumented)
-export enum PresentationRpcEvents {
-    Update = "OnUpdate"
+export enum PresentationIpcEvents {
+    Update = "presentation.onUpdate"
 }
 
 // @public
 export class PresentationRpcInterface extends RpcInterface {
-    // @alpha
+    // @alpha @deprecated (undocumented)
     compareHierarchies(_token: IModelRpcProps, _options: PresentationDataCompareRpcOptions): PresentationRpcResponse<PartialHierarchyModificationJSON[]>;
+    // @alpha (undocumented)
+    compareHierarchiesPaged(_token: IModelRpcProps, _options: PresentationDataCompareRpcOptions): PresentationRpcResponse<HierarchyCompareInfoJSON>;
     // (undocumented)
     computeSelection(_token: IModelRpcProps, _options: SelectionScopeRpcRequestOptions, _ids: Id64String[], _scopeId: string): PresentationRpcResponse<KeySetJSON>;
     // @deprecated (undocumented)
@@ -1655,6 +1689,9 @@ export enum PresentationUnitSystem {
 }
 
 // @public
+export type PrimitivePropertyValue = string | number | boolean | Point | InstanceKey | undefined;
+
+// @public
 export interface PrimitiveTypeDescription extends BaseTypeDescription {
     valueFormat: PropertyValueFormat.Primitive;
 }
@@ -1677,10 +1714,14 @@ export class PropertiesField extends Field {
 export interface PropertiesFieldDescriptor extends FieldDescriptorBase {
     // (undocumented)
     pathFromSelectToPropertyClass: StrippedRelationshipPath;
-    // (undocumented)
-    propertyClass: string;
-    // (undocumented)
-    propertyName: string;
+    properties: Array<{
+        class: string;
+        name: string;
+    }>;
+    // @deprecated (undocumented)
+    propertyClass?: string;
+    // @deprecated (undocumented)
+    propertyName?: string;
     // (undocumented)
     type: FieldDescriptorType.Properties;
 }
@@ -2067,6 +2108,8 @@ export class RpcRequestsHandler implements IDisposable {
     // (undocumented)
     compareHierarchies(options: PresentationDataCompareOptions<IModelRpcProps, NodeKeyJSON>): Promise<PartialHierarchyModificationJSON[]>;
     // (undocumented)
+    compareHierarchiesPaged(options: PresentationDataCompareOptions<IModelRpcProps, NodeKeyJSON>): Promise<HierarchyCompareInfoJSON>;
+    // (undocumented)
     computeSelection(options: SelectionScopeRequestOptions<IModelRpcProps>, ids: Id64String[], scopeId: string): Promise<KeySetJSON>;
     // (undocumented)
     dispose(): void;
@@ -2368,9 +2411,11 @@ export const UPDATE_FULL = "FULL";
 // @alpha (undocumented)
 export interface UpdateInfo {
     // (undocumented)
-    [rulesetId: string]: {
-        hierarchy?: HierarchyUpdateInfo;
-        content?: ContentUpdateInfo;
+    [imodel: string]: {
+        [rulesetId: string]: {
+            hierarchy?: HierarchyUpdateInfo;
+            content?: ContentUpdateInfo;
+        };
     };
 }
 
@@ -2383,9 +2428,11 @@ export namespace UpdateInfo {
 // @alpha (undocumented)
 export interface UpdateInfoJSON {
     // (undocumented)
-    [rulesetId: string]: {
-        hierarchy?: HierarchyUpdateInfoJSON;
-        content?: ContentUpdateInfo;
+    [imodel: string]: {
+        [rulesetId: string]: {
+            hierarchy?: HierarchyUpdateInfoJSON;
+            content?: ContentUpdateInfo;
+        };
     };
 }
 

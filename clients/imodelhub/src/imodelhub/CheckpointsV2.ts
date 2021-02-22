@@ -18,7 +18,7 @@ import { addSelectContainerAccessKey } from "./HubQuery";
 const loggerCategory: string = IModelHubClientLoggerCategory.IModelHub;
 
 /** [[CheckpointV2]] creation state.
- * @alpha
+ * @internal
  */
 export enum CheckpointV2State {
   /** CheckpointV2 creation is in progress. */
@@ -29,10 +29,22 @@ export enum CheckpointV2State {
   Failed = 2
 }
 
+/** [[CheckpointV2]] generation error id.
+ * @internal
+ */
+export enum CheckpointV2ErrorId {
+  UnknownError = 0,
+  FileDownloadError = 1,
+  FileUploadError = 2,
+  FileOpenError = 3,
+  ApplyChangeSetError = 4,
+  TimeOut = 5
+}
+
 /**
  * Checkpoint is a copy of the master file, that is intended to be read-only and reduces amount of merging required to get an iModel to a specific previous state.
  * [[CheckpointV2]] is stored as a set of binary blocks, while [[Checkpoint]] is a single binary file.
- * @alpha
+ * @internal
  */
 @ECJsonTypeMap.classToJson("wsg", "iModelScope.CheckpointV2", { schemaPropertyName: "schemaName", classPropertyName: "className" })
 export class CheckpointV2 extends WsgInstance {
@@ -59,11 +71,35 @@ export class CheckpointV2 extends WsgInstance {
   /** Container AccessKey database name of the storage that can be used to download the checkpoint blocks from iModelHub. See [[CheckpointV2Query.selectContainerAccessKey]]. */
   @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasContainer].relatedInstance[ContainerAccessKey].properties.DbName")
   public containerAccessKeyDbName?: string;
+
+  /** Error type that occurred while generating [[CheckpointV2]]. See [[CheckpointV2Query.selectCheckpointV2FailureInfo]] to query failure info. */
+  @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasCheckpointV2FailureInfo](direction:forward).relatedInstance[CheckpointV2FailureInfo].properties.ErrorId")
+  public failureInfoErrorId?: CheckpointV2ErrorId;
+
+  /** Id of the [[ChangeSet]] which failed to apply when [[CheckpointV2]] was generated. See [[CheckpointV2Query.selectCheckpointV2FailureInfo]] to query failure info. */
+  @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasCheckpointV2FailureInfo](direction:forward).relatedInstance[CheckpointV2FailureInfo].properties.FailedChangeSetId")
+  public failureInfoFailedChangeSetId?: string;
+
+  /** [[CheckpointV2]] generation job start date. This property can not be set by the user. See [[CheckpointV2Query.selectCheckpointV2FailureInfo]] to query failure info. */
+  @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasCheckpointV2FailureInfo](direction:forward).relatedInstance[CheckpointV2FailureInfo].properties.StartDate")
+  public failureInfoStartDate?: string;
+
+  /** [[CheckpointV2]] generation job failure date. This property can not be set by the user. See [[CheckpointV2Query.selectCheckpointV2FailureInfo]] to query failure info. */
+  @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasCheckpointV2FailureInfo](direction:forward).relatedInstance[CheckpointV2FailureInfo].properties.FailureDate")
+  public failureInfoFailureDate?: string;
+
+  /** [[CheckpointV2]] generation job id. It should be unique for every job. See [[CheckpointV2Query.selectCheckpointV2FailureInfo]] to query failure info. */
+  @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasCheckpointV2FailureInfo](direction:forward).relatedInstance[CheckpointV2FailureInfo].properties.JobId")
+  public failureInfoJobId?: string;
+
+  /** [[CheckpointV2]] generation job duration in milliseconds. See [[CheckpointV2Query.selectCheckpointV2FailureInfo]] to query failure info. */
+  @ECJsonTypeMap.propertyToJson("wsg", "relationshipInstances[HasCheckpointV2FailureInfo](direction:forward).relatedInstance[CheckpointV2FailureInfo].properties.JobRunDurationMS")
+  public failureInfoJobRunDurationMS?: string;
 }
 
 /**
  * Query object for getting [[CheckpointV2]]s. You can use this to modify the [[CheckpointV2Handler.get]] results.
- * @alpha
+ * @internal
  */
 export class CheckpointV2Query extends WsgQuery {
   /** Query will return [[CheckpointV2]] with specified [[ChangeSet]] id.
@@ -79,8 +115,8 @@ export class CheckpointV2Query extends WsgQuery {
    * This query returns a closest CheckpointV2 that will reach target ChangeSet by only merging forward. This resets all previously set filters.
    * @returns This query.
    */
-  public precedingCheckpoint(targetChangeSetId: string): this {
-    this.filter(`PrecedingCheckpoint-backward-ChangeSet.Id+eq+'${targetChangeSetId}'`);
+  public precedingCheckpointV2(targetChangeSetId: string): this {
+    this.filter(`PrecedingCheckpointV2-backward-ChangeSet.Id+eq+'${targetChangeSetId}'`);
     return this;
   }
 
@@ -99,19 +135,30 @@ export class CheckpointV2Query extends WsgQuery {
     addSelectContainerAccessKey(this._query);
     return this;
   }
+
+  /** Query will additionally select failure info for failed [[CheckpointV2]].
+   * @returns This query.
+   */
+  public selectFailureInfo(): this {
+    if (!this._query.$select)
+      this._query.$select = "*";
+
+    this._query.$select += ",HasCheckpointV2FailureInfo-forward-CheckpointV2FailureInfo.*";
+    return this;
+  }
 }
 
 /**
  * Handler for managing [[CheckpointV2]]s. Use [[IModelClient.checkpointsV2]] to get an instance of this class.
  * In most cases, you should use [BriefcaseDb]($backend) methods instead.
- * @alpha
+ * @internal
  */
 export class CheckpointV2Handler {
   private _handler: IModelBaseHandler;
 
   /** Constructor for CheckpointV2Handler. Use [[IModelClient]] instead of directly constructing this.
    * @param handler Handler for WSG requests.
-   * @alpha
+   * @internal
    */
   constructor(handler: IModelBaseHandler) {
     this._handler = handler;
@@ -120,7 +167,7 @@ export class CheckpointV2Handler {
   /** Get relative url for [[CheckpointV2]] requests.
    * @param iModelId Id of the iModel. See [[HubIModel]].
    * @param briefcaseId Id of the checkpoint.
-   * @alpha
+   * @internal
    */
   private getRelativeUrl(iModelId: GuidString, checkpointId?: number) {
     return `/Repositories/iModel--${iModelId}/iModelScope/CheckpointV2/${checkpointId || ""}`;

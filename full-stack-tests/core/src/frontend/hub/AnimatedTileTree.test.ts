@@ -3,14 +3,17 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { expect } from "chai";
-import {
-  DisplayStyleProps, RenderSchedule,
-} from "@bentley/imodeljs-common";
-import {
-  IModelApp, IModelConnection, RemoteBriefcaseConnection, RenderScheduleState,
-} from "@bentley/imodeljs-frontend";
+import { DisplayStyleProps, RenderSchedule } from "@bentley/imodeljs-common";
+import { CheckpointConnection, IModelApp, IModelConnection, RenderScheduleState, SpatialViewState, ViewState } from "@bentley/imodeljs-frontend";
 import { TestUsers } from "@bentley/oidc-signin-tool/lib/TestUsers";
 import { TestUtility } from "./TestUtility";
+
+function countTileTrees(view: ViewState): number {
+  let numTrees = 0;
+  view.forEachModelTreeRef((_) => ++numTrees);
+  return numTrees;
+}
+// eslint-disable-file deprecation/deprecation
 
 describe("Animated tile trees (#integration)", () => {
   const projectName = "iModelJsIntegrationTest";
@@ -20,6 +23,7 @@ describe("Animated tile trees (#integration)", () => {
   let imodel: IModelConnection;
 
   before(async () => {
+    await IModelApp.shutdown();
     await IModelApp.startup({
       authorizationClient: await TestUtility.initializeTestProject(projectName, TestUsers.regular),
       imodelClient: TestUtility.imodelCloudEnv.imodelClient,
@@ -27,7 +31,7 @@ describe("Animated tile trees (#integration)", () => {
     });
     const projectId = await TestUtility.getTestProjectId(projectName);
     const iModelId = await TestUtility.getTestIModelId(projectId, "SYNCHRO.UTK");
-    imodel = await RemoteBriefcaseConnection.open(projectId, iModelId);
+    imodel = await CheckpointConnection.openRemote(projectId, iModelId);
   });
 
   after(async () => {
@@ -93,16 +97,11 @@ describe("Animated tile trees (#integration)", () => {
   it("creates an additional tile tree per animation transform node", async () => {
     const view = await imodel.views.load(viewId);
     expect(view.displayStyle.scheduleScript).not.to.be.undefined;
-    const countTileTrees = () => {
-      let numTrees = 0;
-      view.forEachModelTreeRef((_) => ++numTrees);
-      return numTrees;
-    };
 
-    expect(countTileTrees()).to.equal(2);
+    expect(countTileTrees(view)).to.equal(2);
 
     view.displayStyle.scheduleScript = undefined;
-    expect(countTileTrees()).to.equal(1);
+    expect(countTileTrees(view)).to.equal(1);
 
     const transformTimeline = JSON.parse(`[{"interpolation":2,"time":1526641200,"value":{"orientation":[0,0,0,1],"pivot":[18.318691253662109,-9.0335273742675781,4.1377468109130859],"position":[-17.786201477050781,8.4895801544189453,-3.6213436126708984],"transform":[[1,0,0,0.53248977661132813],[0,1,0,-0.54394721984863281],[0,0,1,0.51640319824218750]]}},{"interpolation":2,"time":1526641260,"value":{"orientation":[0,0,0,1],"pivot":[18.318691253662109,-9.0335273742675781,4.1377468109130859],"position":[-17.78613281250,8.4904203414916992,-3.6213412284851074],"transform":[[1,0,0,0.53255844116210938],[0,1,0,-0.54310703277587891],[0,0,1,0.51640558242797852]]}},{"interpolation":2,"time":1527431880,"value":{"orientation":[0,0,0,1],"pivot":[18.318691253662109,-9.0335273742675781,4.1377468109130859],"position":[-16.876888275146484,19.567762374877930,-3.5913453102111816],"transform":[[1,0,0,1.4418029785156250],[0,1,0,10.534235000610352],[0,0,1,0.54640150070190430]]}},{"interpolation":1,"time":1527850740,"value":{"orientation":[0,0,0,1],"pivot":[18.318691253662109,-9.0335273742675781,4.1377468109130859],"position":[-15.742227554321289,26.631050109863281,-4.1812567710876465],"transform":[[1,0,0,2.5764636993408203],[0,1,0,17.597522735595703],[0,0,1,-0.043509960174560547]]}}]`) as RenderSchedule.TransformEntryProps[];
 
@@ -120,6 +119,38 @@ describe("Animated tile trees (#integration)", () => {
     }];
 
     view.displayStyle.scheduleScript = RenderScheduleState.Script.fromJSON(styleId, json);
-    expect(countTileTrees()).to.equal(3);
+    expect(countTileTrees(view)).to.equal(3);
+  });
+
+  it("updates tile tree references when schedule script changes", async () => {
+    const view = await imodel.views.load(viewId) as SpatialViewState;
+    expect(view instanceof SpatialViewState).to.be.true;
+
+    expect(view.displayStyle.scheduleScript).not.to.be.undefined;
+    expect(countTileTrees(view)).to.equal(2);
+
+    const script = view.displayStyle.scheduleScript;
+    view.displayStyle.scheduleScript = undefined;
+    expect(countTileTrees(view)).to.equal(1);
+
+    view.displayStyle.scheduleScript = script;
+    expect(countTileTrees(view)).to.equal(2);
+
+    const style = view.displayStyle.clone();
+    style.scheduleScript = undefined;
+    view.displayStyle = style;
+    expect(countTileTrees(view)).to.equal(1);
+  });
+
+  it("applies current schedule script to newly-added tile tree references", async () => {
+    const view = await imodel.views.load(viewId) as SpatialViewState;
+    view.modelSelector.models.clear();
+    expect(countTileTrees(view)).to.equal(0);
+
+    view.modelSelector.models.add(modelId);
+    expect(countTileTrees(view)).to.equal(0);
+
+    view.markModelSelectorChanged();
+    expect(countTileTrees(view)).to.equal(2);
   });
 });
