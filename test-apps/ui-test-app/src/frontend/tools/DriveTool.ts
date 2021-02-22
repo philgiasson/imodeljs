@@ -15,23 +15,37 @@ import {
 } from '@bentley/imodeljs-frontend';
 import { Point3d, Vector3d } from '@bentley/geometry-core';
 import { GeometricElement3d } from '../../../../../core/backend';
+import { Point } from '../../../../../ui/core';
 
 
 export class DriveTool extends PrimitiveTool {
 
   public static toolId = 'DriveTool';
   public static iconSpec = 'icon-airplane';
+
   public viewport?: ScreenViewport;
+  private _origin?: Point3d;
+  private _target?: Point3d;
+  private _direction?: Vector3d;
 
   private _zAxisOffset = 1.5;
   public get zAxisOffset() { return this._zAxisOffset; }
   public set zAxisOffset(value: number) {
     this._zAxisOffset = value;
+    this.updateCamera();
   }
 
   public launch(): void {
-    const msg = `Drive tool launched`;
-    IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Info, msg));
+    console.log('origin', this._origin)
+    console.log('target', this._target)
+    if (this._origin && this._target) {
+      const direction = Vector3d.createFrom(this._target.minus(this._origin)).scaleToLength(-10);
+      console.log('direction', direction)
+      if (direction) {
+        this._origin.addInPlace(Point3d.createFrom(direction));
+      }
+    }
+    this.updateCamera();
   }
 
   public requireWriteableTarget(): boolean {
@@ -39,7 +53,12 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public onPostInstall() {
+    console.warn('post install');
     super.onPostInstall();
+
+    this.viewport = IModelApp.viewManager.selectedView;
+    this.setupOrigin();
+
     this.setupAndPromptForNextAction();
   }
 
@@ -59,32 +78,55 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
-    this.viewport = ev.viewport;
+    console.warn('data button down', ev);
+    this._target = ev.rawPoint;
+    this.updateCamera();
+    return EventHandled.Yes
+  }
 
+  private updateCamera(): void {
     const vp = this.viewport;
     if (undefined === vp)
-      return EventHandled.Yes;
+      return;
 
     const view = vp.view;
     if (!view.is3d() || !view.allow3dManipulations())
-      return EventHandled.Yes;
+      return;
+
+    if (this._origin) {
+      const eyePoint = Point3d.createFrom(this._origin);
+      eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
+      view.camera.setEyePoint(eyePoint);
+    }
+
+    if (this._target !== undefined) {
+      view.lookAtUsingLensAngle(view.getEyePoint(), this._target, Vector3d.unitZ(), view.getLensAngle());
+    }
+
+    vp.synchWithView({animateFrustumChange: true});
+  }
+
+  private setupOrigin(): void {
+    const vp = this.viewport;
+    if (undefined === vp)
+      return;
+
+    const view = vp.view;
+    if (!view.is3d() || !view.allow3dManipulations())
+      return;
 
     if (view.iModel.selectionSet.size === 1) {
       let selectedElement = view.iModel.selectionSet.elements.values().next().value;
       view.iModel.elements.getProps(selectedElement).then(props => {
         let elementProp = props[0] as GeometricElement3d;
         let origin = elementProp.placement.origin as any;
-        let point = new Point3d(origin[0], origin[1], origin[2])
-        point.addInPlace(Vector3d.unitZ(this._zAxisOffset));
-        view.camera.setEyePoint(point);
-        vp.synchWithView({animateFrustumChange: true});
+        this._origin = new Point3d(origin[0], origin[1], origin[2]);
+        this.updateCamera();
       });
     } else {
       const msg = `Must select only 1 element`;
       IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Warning, msg));
     }
-
-    return EventHandled.Yes;
   }
 
   public async onResetButtonUp(_ev: BeButtonEvent): Promise<EventHandled> {
