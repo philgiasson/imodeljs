@@ -6,6 +6,8 @@ import {
   BeButtonEvent,
   EventHandled,
   IModelApp,
+  NotifyMessageDetails,
+  OutputMessagePriority,
   PrimitiveTool,
   ScreenViewport,
   ToolAssistance,
@@ -21,6 +23,11 @@ export class DriveTool extends PrimitiveTool {
   public static iconSpec = 'icon-airplane';
 
   public viewport?: ScreenViewport;
+
+  public launch(): void {
+    const msg = `Drive tool launched`;
+    IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Info, msg));
+  }
 
   public requireWriteableTarget(): boolean {
     return false;
@@ -47,8 +54,6 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
-    console.warn(ev);
-
     this.viewport = ev.viewport;
 
     const vp = this.viewport;
@@ -59,22 +64,20 @@ export class DriveTool extends PrimitiveTool {
     if (!view.is3d() || !view.allow3dManipulations())
       return EventHandled.Yes;
 
-
-    view.iModel.elements.getProps("0x20000000d31").then(props => {
-
-      let elementProp = props[0] as GeometricElement3d;
-      console.warn(elementProp);
-
-      let origin = elementProp.placement.origin as any;
-      console.warn(origin);
-
-      let point = new Point3d(origin[0], origin[1], origin[2])
-
-      point.addInPlace(Vector3d.unitZ(2));
-
-      view.camera.setEyePoint(point);
-      vp.synchWithView({animateFrustumChange: true});
-    });
+    if (view.iModel.selectionSet.size === 1) {
+      let selectedElement = view.iModel.selectionSet.elements.values().next().value;
+      view.iModel.elements.getProps(selectedElement).then(props => {
+        let elementProp = props[0] as GeometricElement3d;
+        let origin = elementProp.placement.origin as any;
+        let point = new Point3d(origin[0], origin[1], origin[2])
+        point.addInPlace(Vector3d.unitZ(2));
+        view.camera.setEyePoint(point);
+        vp.synchWithView({animateFrustumChange: true});
+      });
+    } else {
+      const msg = `Must select only 1 element`;
+      IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Warning, msg));
+    }
 
     return EventHandled.Yes;
   }
