@@ -21,8 +21,13 @@ export class DriveTool extends PrimitiveTool {
 
   public static toolId = 'DriveTool';
   public static iconSpec = 'icon-airplane';
-
   public viewport?: ScreenViewport;
+
+  private _zAxisOffset = 1.5;
+  public get zAxisOffset() { return this._zAxisOffset; }
+  public set zAxisOffset(value: number) {
+    this._zAxisOffset = value;
+  }
 
   public launch(): void {
     const msg = `Drive tool launched`;
@@ -70,7 +75,7 @@ export class DriveTool extends PrimitiveTool {
         let elementProp = props[0] as GeometricElement3d;
         let origin = elementProp.placement.origin as any;
         let point = new Point3d(origin[0], origin[1], origin[2])
-        point.addInPlace(Vector3d.unitZ(2));
+        point.addInPlace(Vector3d.unitZ(this._zAxisOffset));
         view.camera.setEyePoint(point);
         vp.synchWithView({animateFrustumChange: true});
       });
