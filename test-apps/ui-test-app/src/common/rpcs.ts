@@ -25,7 +25,6 @@ export default function getSupportedRpcs(): RpcInterfaceDefinition[] {
       PresentationRpcInterface,
       IModelWriteRpcInterface,
       Editor3dRpcInterface,
-      NativeAppRpcInterface,
       CustomRpcInterface,
     ];
   }
