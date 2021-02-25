@@ -231,6 +231,11 @@ export interface AccuDrawDialogProps extends CommonProps {
 }
 
 // @alpha
+export class AccuDrawKeyboardShortcuts {
+    static getDefaultShortcuts(): KeyboardShortcutProps[];
+}
+
+// @alpha
 export class AccuDrawPopupManager {
     // (undocumented)
     static hideCalculator(): boolean;
@@ -246,6 +251,18 @@ export class AccuDrawPopupManager {
     static showLengthEditor(el: HTMLElement, pt: XAndY, value: number, onCommit: OnNumberCommitFunc, onCancel: OnCancelFunc): boolean;
     // (undocumented)
     static showMenuButton(id: string, el: HTMLElement, pt: XAndY, menuItemsProps: AbstractMenuItemProps[]): boolean;
+}
+
+// @alpha
+export function AccuDrawWidget(): JSX.Element;
+
+// @alpha
+export class AccuDrawWidgetControl extends WidgetControl {
+    constructor(info: ConfigurableCreateInfo, options: any);
+    // (undocumented)
+    static id: string;
+    // (undocumented)
+    static get label(): string;
 }
 
 // @public
