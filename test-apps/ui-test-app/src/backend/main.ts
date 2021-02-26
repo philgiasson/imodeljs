@@ -45,6 +45,9 @@ import { initializeLogging } from "./web/BackendServer";
       updatesPollInterval: 100,
     });
 
+    // Register our custom RPC implementation
+    RpcManager.registerImpl(CustomRpcInterface, CustomRpcImpl);
+
     // invoke platform-specific initialization
     // get platform-specific initialization function
     let init: (rpcs: RpcInterfaceDefinition[]) => void;

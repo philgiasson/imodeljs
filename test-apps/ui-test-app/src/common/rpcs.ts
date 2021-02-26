@@ -8,6 +8,7 @@ import {
 } from "@bentley/imodeljs-common";
 import { PresentationRpcInterface } from "@bentley/presentation-common";
 import { Config } from "@bentley/bentleyjs-core";
+import { CustomRpcInterface } from "./CustomRpcInterface";
 
 /**
  * Returns a list of RPCs supported by this application
@@ -23,7 +24,8 @@ export default function getSupportedRpcs(): RpcInterfaceDefinition[] {
       SnapshotIModelRpcInterface,
       PresentationRpcInterface,
       IModelWriteRpcInterface,
-      Editor3dRpcInterface, // eslint-disable-line deprecation/deprecation
+      Editor3dRpcInterface,
+      CustomRpcInterface,
     ];
   }
 
@@ -35,6 +37,7 @@ export default function getSupportedRpcs(): RpcInterfaceDefinition[] {
     IModelTileRpcInterface,
     SnapshotIModelRpcInterface,
     PresentationRpcInterface,
+    CustomRpcInterface,
   ];
 
 }
