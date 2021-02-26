@@ -29,8 +29,6 @@ import { AnalysisAnimationTool } from "../tools/AnalysisAnimation";
 import { Tool1 } from "../tools/Tool1";
 import { Tool2 } from "../tools/Tool2";
 import { ToolWithSettings } from "./ToolWithSettings";
-import { Presentation } from "@bentley/presentation-frontend";
-import { PresentationUnitSystem } from "@bentley/presentation-common";
 import { DriveTool } from "../tools/DriveTool";
 
 // cSpell:ignore appui appuiprovider
