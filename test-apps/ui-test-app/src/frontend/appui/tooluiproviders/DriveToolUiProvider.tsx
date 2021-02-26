@@ -20,12 +20,12 @@ function ZAxisOffset() {
     let value = values[0];
     if (IModelApp.toolAdmin.activeTool)
       (IModelApp.toolAdmin.activeTool as DriveTool).zAxisOffset = value;
-    setOffset(value)
+    setOffset(value);
   }, []);
   return (
-    <Slider style={{ minWidth: "160px" }}
+    <Slider style={{minWidth: '160px'}}
             min={0} max={5} values={[offset]} step={0.1} showMinMax={true}
-            showTooltip tooltipBelow onChange={handleSliderChange} />
+            showTooltip tooltipBelow onChange={handleSliderChange}/>
   );
 }
 
@@ -42,15 +42,15 @@ function LaunchButton() {
 class DriveToolUiProvider extends ToolUiProvider {
   constructor(info: ConfigurableCreateInfo, options: any) {
     super(info, options);
-    this.toolSettingsNode = <ToolSettingsGrid settings={this.getHorizontalToolSettings()} />;
+    this.toolSettingsNode = <ToolSettingsGrid settings={this.getHorizontalToolSettings()}/>;
   }
 
   private getHorizontalToolSettings(): ToolSettingsEntry[] | undefined {
     return [
-      { labelNode: "Slider", editorNode: <ZAxisOffset /> },
-      { labelNode: "", editorNode: <LaunchButton /> }
+      {labelNode: 'Slider', editorNode: <ZAxisOffset/>},
+      {labelNode: '', editorNode: <LaunchButton/>}
     ];
   }
 }
 
-ConfigurableUiManager.registerControl("DriveTool", DriveToolUiProvider);
+ConfigurableUiManager.registerControl('DriveTool', DriveToolUiProvider);
