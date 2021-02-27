@@ -13,18 +13,17 @@ import {
   PrimitiveTool,
   ScreenViewport,
   ToolAssistance,
-  ToolAssistanceImage
-} from '@bentley/imodeljs-frontend';
-import { Easing } from '@bentley/imodeljs-common';
-import { Path, Point3d, Vector3d } from '@bentley/geometry-core';
-import { GeometricElement3d } from '../../../../../core/backend';
-import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
-
+  ToolAssistanceImage,
+} from "@bentley/imodeljs-frontend";
+import { Easing } from "@bentley/imodeljs-common";
+import { CurveChainWithDistanceIndex, Path, Point3d, Vector3d } from "@bentley/geometry-core";
+import { GeometricElement3d } from "../../../../../core/backend";
+import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
 
 export class DriveTool extends PrimitiveTool {
 
-  public static toolId = 'DriveTool';
-  public static iconSpec = 'icon-airplane';
+  public static toolId = "DriveTool";
+  public static iconSpec = "icon-airplane";
 
   public viewport?: ScreenViewport;
 
@@ -52,8 +51,14 @@ export class DriveTool extends PrimitiveTool {
       if (this._path) {
         console.warn("step");
         this._currentFraction += 0.005;
-        this.setTarget(this._path.getChild(1)?.fractionToPoint(this._currentFraction));
-        this.moveCameraToPoint(this._target);
+        const curveChain = CurveChainWithDistanceIndex.createCapture(this._path);
+        const view_target = curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
+        const target = curveChain?.fractionToPoint(this._currentFraction);
+        console.warn("view_target", view_target);
+        console.warn("target", target);
+        // const target = this._path.getChild(1)?.fractionToPoint(this._currentFraction);
+        this.setTarget(target);
+        this.moveCameraToPoint(this._target, view_target);
       }
     }, this._intervalTime);
   }
@@ -72,7 +77,7 @@ export class DriveTool extends PrimitiveTool {
     super.onPostInstall();
     IModelApp.accuSnap.enableSnap(true);
     this.viewport = IModelApp.viewManager.selectedView;
-    this.initWithSelectedElement();
+    void this.initWithSelectedElement();
     this.setupAndPromptForNextAction();
   }
 
@@ -85,7 +90,7 @@ export class DriveTool extends PrimitiveTool {
   }
 
   protected provideToolAssistance(): void {
-    const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, 'Select an object');
+    const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
     const instructions = ToolAssistance.createInstructions(mainInstruction);
     IModelApp.notifications.setToolAssistance(instructions);
   }
@@ -122,7 +127,7 @@ export class DriveTool extends PrimitiveTool {
     }
   }
 
-  private moveCameraToPoint(point: Point3d | undefined): void {
+  private moveCameraToPoint(point: Point3d | undefined, view_target?: Vector3d | undefined): void {
     const vp = this.viewport;
     if (undefined === vp)
       return;
@@ -131,16 +136,23 @@ export class DriveTool extends PrimitiveTool {
     if (!view.is3d() || !view.allow3dManipulations())
       return;
 
-    if (point) {
+    if (point && !view_target) {
       const eyePoint = Point3d.createFrom(point);
       eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
       view.camera.setEyePoint(eyePoint);
     }
 
+    // change target of camera
+    if (point && view_target) {
+      const eyePoint = Point3d.createFrom(point);
+      eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
+      view.lookAt(eyePoint, eyePoint.plus(view_target), new Vector3d(0, 0, 1));
+    }
+
     vp.synchWithView({
       animateFrustumChange: true,
       animationTime: this._intervalTime,
-      easingFunction: Easing.Linear.None
+      easingFunction: Easing.Linear.None,
     });
   }
 
@@ -154,15 +166,15 @@ export class DriveTool extends PrimitiveTool {
       return;
 
     if (view.iModel.selectionSet.size === 1) {
-      let selectedElementId = view.iModel.selectionSet.elements.values().next().value;
+      const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
 
       const response = await CustomRpcInterface.getClient().queryPath(view.iModel.getRpcProps(), selectedElementId);
       this._path = CustomRpcUtilities.parsePath(response);
 
-      view.iModel.elements.getProps(selectedElementId).then(async props => {
-        console.warn('selected element', props[0])
-        let elementProp = props[0] as GeometricElement3d;
-        let origin = elementProp.placement.origin as any;
+      void view.iModel.elements.getProps(selectedElementId).then(async (props) => {
+        console.warn("selected element", props[0]);
+        const elementProp = props[0] as GeometricElement3d;
+        const origin = elementProp.placement.origin as any;
         this._origin = new Point3d(origin[0], origin[1], origin[2]);
         this.moveCameraToPoint(this._origin);
       });
