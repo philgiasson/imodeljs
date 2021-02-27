@@ -15,6 +15,7 @@ import {
   ToolAssistance,
   ToolAssistanceImage
 } from '@bentley/imodeljs-frontend';
+import { Easing } from '@bentley/imodeljs-common';
 import { Path, Point3d, Vector3d } from '@bentley/geometry-core';
 import { GeometricElement3d } from '../../../../../core/backend';
 import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
@@ -33,6 +34,10 @@ export class DriveTool extends PrimitiveTool {
   private _targetDistance = 0;
   private _zAxisOffset = 1.5;
 
+  private _currentFraction = 0;
+  private _intervalId?: NodeJS.Timeout;
+  private _intervalTime = 1000;
+
   public get zAxisOffset() {
     return this._zAxisOffset;
   }
@@ -43,10 +48,20 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public launch(): void {
-    if (this._path) {
-      this.setTarget(this._path.children[0].endPoint());
+    this._intervalId = setInterval(() => {
+      if (this._path) {
+        console.warn("step");
+        this._currentFraction += 0.005;
+        this.setTarget(this._path.getChild(1)?.fractionToPoint(this._currentFraction));
+        this.moveCameraToPoint(this._target);
+      }
+    }, this._intervalTime);
+  }
+
+  public stop(): void {
+    if (this._intervalId) {
+      clearTimeout(this._intervalId);
     }
-    this.moveCameraToPoint(this._target);
   }
 
   public requireWriteableTarget(): boolean {
@@ -101,9 +116,9 @@ export class DriveTool extends PrimitiveTool {
     if (this._origin && this._target) {
       const direction = Vector3d.createFrom(this._target.minus(this._origin));
       this._targetDistance = direction?.distance(Vector3d.create(0, 0, 0));
-      IModelApp.notifications.outputMessage(
-        new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${Math.round(this._targetDistance)}m`)
-      );
+      // IModelApp.notifications.outputMessage(
+      //   new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${Math.round(this._targetDistance)}m`)
+      // );
     }
   }
 
@@ -122,7 +137,11 @@ export class DriveTool extends PrimitiveTool {
       view.camera.setEyePoint(eyePoint);
     }
 
-    vp.synchWithView({animateFrustumChange: true});
+    vp.synchWithView({
+      animateFrustumChange: true,
+      animationTime: this._intervalTime,
+      easingFunction: Easing.Linear.None
+    });
   }
 
   private async initWithSelectedElement(): Promise<void> {

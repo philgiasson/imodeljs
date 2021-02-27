@@ -39,6 +39,16 @@ function LaunchButton() {
   )
 }
 
+function StopButton() {
+  const handleButtonClicked = React.useCallback(() => {
+    if (IModelApp.toolAdmin.activeTool)
+      (IModelApp.toolAdmin.activeTool as DriveTool).stop();
+  }, [])
+  return (
+    <Button onClick={handleButtonClicked}>Stop</Button>
+  )
+}
+
 class DriveToolUiProvider extends ToolUiProvider {
   constructor(info: ConfigurableCreateInfo, options: any) {
     super(info, options);
@@ -48,7 +58,8 @@ class DriveToolUiProvider extends ToolUiProvider {
   private getHorizontalToolSettings(): ToolSettingsEntry[] | undefined {
     return [
       {labelNode: 'Slider', editorNode: <ZAxisOffset/>},
-      {labelNode: '', editorNode: <LaunchButton/>}
+      {labelNode: '', editorNode: <LaunchButton/>},
+      {labelNode: '', editorNode: <StopButton/>}
     ];
   }
 }
