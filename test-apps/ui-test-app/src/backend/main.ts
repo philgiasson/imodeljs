@@ -9,10 +9,12 @@ import * as path from "path";
 import { BackendApplicationInsightsClient } from "@bentley/backend-application-insights-client";
 import { Config, Logger } from "@bentley/bentleyjs-core";
 import { IModelHost } from "@bentley/imodeljs-backend";
-import { RpcInterfaceDefinition } from "@bentley/imodeljs-common";
+import { RpcInterfaceDefinition, RpcManager } from '@bentley/imodeljs-common';
 import { Presentation } from "@bentley/presentation-backend";
 import getSupportedRpcs from "../common/rpcs";
 import { initializeLogging } from "./web/BackendServer";
+import { CustomRpcInterface } from '../common/CustomRpcInterface';
+import { CustomRpcImpl } from './CustomRpcImpl';
 
 (async () => { // eslint-disable-line @typescript-eslint/no-floating-promises
   try {
