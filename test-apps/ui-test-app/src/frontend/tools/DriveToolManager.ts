@@ -13,6 +13,7 @@ import { Easing } from '@bentley/imodeljs-common';
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
 import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
 import { GeometricElement3d } from '../../../../../core/backend';
+import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
 
 export class DriveToolManager {
 
@@ -66,12 +67,19 @@ export class DriveToolManager {
         this._curveChain = CurveChainWithDistanceIndex.createCapture(path);
       }
 
-      void view.iModel.elements.getProps(selectedElementId).then(async (props) => {
-        const elementProp = props[0] as GeometricElement3d;
-        const origin = elementProp.placement.origin as any;
-        this._cameraPosition = new Point3d(origin[0], origin[1], origin[2]);
-        this.updateCamera();
-      });
+      this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getOriginRef();
+      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
+      this.updateCamera()
+
+      //void view.iModel.elements.getProps(selectedElementId).then(async (props) => {
+      //  //TODO: delete
+      //  const elementProp = props[0] as GeometricElement3d;
+      //  const origin = elementProp.placement.origin as any;
+
+      //  this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getOriginRef();
+      //  this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
+      //  this.updateCamera();
+      //});
     } else {
       const msg = `Must select only 1 element`;
       IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Warning, msg));
@@ -126,17 +134,17 @@ export class DriveToolManager {
     if (!view.is3d() || !view.allow3dManipulations())
       return;
 
-    if (this._cameraPosition && !this._cameraLookAt) {
-      const eyePoint = Point3d.createFrom(this._cameraPosition);
-      eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
-      view.camera.setEyePoint(eyePoint);
-    }
+    //if (this._cameraPosition && !this._cameraLookAt) {
+    //  const eyePoint = Point3d.createFrom(this._cameraPosition);
+    //  eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
+    //  view.camera.setEyePoint(eyePoint);
+    //}
 
-    // change target of camera
+    //change target of camera
     if (this._cameraPosition && this._cameraLookAt) {
       const eyePoint = Point3d.createFrom(this._cameraPosition);
       eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
-      view.lookAt(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1));
+      view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(120));
     }
 
     vp.synchWithView({
