@@ -15,11 +15,11 @@ import { IModelApp } from '@bentley/imodeljs-frontend';
 import { DriveTool } from '../../tools/DriveTool';
 
 function ZAxisOffset() {
-  const [offset, setOffset] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).zAxisOffset : 0);
+  const [offset, setOffset] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.zAxisOffset : 0);
   const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
     let value = values[0];
     if (IModelApp.toolAdmin.activeTool)
-      (IModelApp.toolAdmin.activeTool as DriveTool).zAxisOffset = value;
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.zAxisOffset = value;
     setOffset(value);
   }, []);
   return (
@@ -32,7 +32,7 @@ function ZAxisOffset() {
 function LaunchButton() {
   const handleButtonClicked = React.useCallback(() => {
     if (IModelApp.toolAdmin.activeTool)
-      (IModelApp.toolAdmin.activeTool as DriveTool).launch();
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.launch();
   }, [])
   return (
     <Button onClick={handleButtonClicked}>Launch</Button>
@@ -42,7 +42,7 @@ function LaunchButton() {
 function StopButton() {
   const handleButtonClicked = React.useCallback(() => {
     if (IModelApp.toolAdmin.activeTool)
-      (IModelApp.toolAdmin.activeTool as DriveTool).stop();
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.stop();
   }, [])
   return (
     <Button onClick={handleButtonClicked}>Stop</Button>
