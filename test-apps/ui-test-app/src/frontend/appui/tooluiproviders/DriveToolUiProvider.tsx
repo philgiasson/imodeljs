@@ -29,6 +29,21 @@ function ZAxisOffset() {
   );
 }
 
+function Speed() {
+  const [speed, setSpeed] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.speed : 0);
+  const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
+    let value = values[0];
+    if (IModelApp.toolAdmin.activeTool)
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.speed = value;
+    setSpeed(value);
+  }, []);
+  return (
+    <Slider style={{minWidth: '160px'}}
+            min={-50} max={50} values={[speed]} step={1} showMinMax={true}
+            showTooltip tooltipBelow onChange={handleSliderChange}/>
+  );
+}
+
 function LaunchButton() {
   const handleButtonClicked = React.useCallback(() => {
     if (IModelApp.toolAdmin.activeTool)
@@ -57,7 +72,8 @@ class DriveToolUiProvider extends ToolUiProvider {
 
   private getHorizontalToolSettings(): ToolSettingsEntry[] | undefined {
     return [
-      {labelNode: 'Slider', editorNode: <ZAxisOffset/>},
+      {labelNode: 'ZAxisOffset', editorNode: <ZAxisOffset/>},
+      {labelNode: 'Speed', editorNode: <Speed/>},
       {labelNode: '', editorNode: <LaunchButton/>},
       {labelNode: '', editorNode: <StopButton/>}
     ];
