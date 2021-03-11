@@ -3,6 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import {
+  HitDetail,
   IModelApp,
   NotifyMessageDetails,
   OutputMessagePriority,
@@ -61,25 +62,8 @@ export class DriveToolManager {
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
 
-      const response = await CustomRpcInterface.getClient().queryPath(view.iModel.getRpcProps(), selectedElementId);
-      const path = CustomRpcUtilities.parsePath(response);
-      if (path) {
-        this._curveChain = CurveChainWithDistanceIndex.createCapture(path);
-      }
+      await this.setOrigin(selectedElementId);
 
-      this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getOriginRef();
-      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
-      this.updateCamera()
-
-      //void view.iModel.elements.getProps(selectedElementId).then(async (props) => {
-      //  //TODO: delete
-      //  const elementProp = props[0] as GeometricElement3d;
-      //  const origin = elementProp.placement.origin as any;
-
-      //  this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getOriginRef();
-      //  this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
-      //  this.updateCamera();
-      //});
     } else {
       const msg = `Must select only 1 element`;
       IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Warning, msg));
@@ -110,19 +94,44 @@ export class DriveToolManager {
     }
   }
 
+  public setHit(hit: HitDetail | undefined): void {
+    if (this._curveChain) {
+      this.setTarget(hit?.getPoint());
+    } else {
+      void this.setOrigin(hit?.sourceId);
+    }
+  }
+
   public setTarget(newTarget: Point3d | undefined): void {
     this._target = newTarget;
     if (this._cameraPosition && this._target) {
       const direction = Vector3d.createFrom(this._target.minus(this._cameraPosition));
       this._targetDistance = direction?.distance(Vector3d.create(0, 0, 0));
 
-      IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then(formatter => {
+      IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then((formatter) => {
         const formattedDistance = IModelApp.quantityFormatter.formatQuantity(this._targetDistance, formatter);
         IModelApp.notifications.outputMessage(
           new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${formattedDistance}`)
         );
       });
     }
+  }
+
+  public async setOrigin(selectedElementId: any) {
+    const viewport = this._viewport;
+    if (undefined === viewport)
+      return;
+    const view = viewport?.view;
+
+    const response = await CustomRpcInterface.getClient().queryPath(view.iModel.getRpcProps(), selectedElementId);
+    const path = CustomRpcUtilities.parsePath(response);
+    if (path) {
+      this._curveChain = CurveChainWithDistanceIndex.createCapture(path);
+    }
+
+    this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getOriginRef();
+    this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
+    this.updateCamera();
   }
 
   private updateCamera(): void {

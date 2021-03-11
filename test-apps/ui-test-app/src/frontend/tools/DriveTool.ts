@@ -6,6 +6,7 @@ import {
   BeButtonEvent,
   BeWheelEvent,
   EventHandled,
+  HitDetail,
   IModelApp,
   LocateResponse,
   PrimitiveTool,
@@ -52,7 +53,8 @@ export class DriveTool extends PrimitiveTool {
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-    this._manager.setTarget(hit?.getPoint());
+    console.warn(hit);
+    this._manager.setHit(hit);
     return EventHandled.Yes;
   }
 
