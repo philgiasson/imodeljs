@@ -9,7 +9,7 @@ import {
   ToolSettingsGrid,
   ToolUiProvider
 } from '@bentley/ui-framework';
-import { Button, Slider } from '@bentley/ui-core';
+import { Slider } from '@bentley/ui-core';
 import * as React from 'react';
 import { IModelApp } from '@bentley/imodeljs-frontend';
 import { DriveTool } from '../../tools/DriveTool';
@@ -44,24 +44,34 @@ function Speed() {
   );
 }
 
-function LaunchButton() {
-  const handleButtonClicked = React.useCallback(() => {
+function Fov() {
+  const [fov, setFov] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.fov : 0);
+  const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
+    let value = values[0];
     if (IModelApp.toolAdmin.activeTool)
-      (IModelApp.toolAdmin.activeTool as DriveTool).manager.launch();
-  }, [])
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.fov = value;
+    setFov(value);
+  }, []);
   return (
-    <Button onClick={handleButtonClicked}>Launch</Button>
-  )
+    <Slider style={{minWidth: '160px'}}
+            min={0} max={180} values={[fov]} step={1} showMinMax={true}
+            showTooltip tooltipBelow onChange={handleSliderChange}/>
+  );
 }
 
-function StopButton() {
-  const handleButtonClicked = React.useCallback(() => {
+function Progress() {
+  const [progress, setProgress] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.progress : 0);
+  const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
+    let value = values[0] / 100;
     if (IModelApp.toolAdmin.activeTool)
-      (IModelApp.toolAdmin.activeTool as DriveTool).manager.stop();
-  }, [])
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.progress = value;
+    setProgress(value);
+  }, []);
   return (
-    <Button onClick={handleButtonClicked}>Stop</Button>
-  )
+    <Slider style={{minWidth: '160px'}}
+            min={0} max={100} values={[progress * 100]} step={1} showMinMax={true}
+            showTooltip tooltipBelow onChange={handleSliderChange}/>
+  );
 }
 
 class DriveToolUiProvider extends ToolUiProvider {
@@ -74,8 +84,8 @@ class DriveToolUiProvider extends ToolUiProvider {
     return [
       {labelNode: 'ZAxisOffset', editorNode: <ZAxisOffset/>},
       {labelNode: 'Speed', editorNode: <Speed/>},
-      {labelNode: '', editorNode: <LaunchButton/>},
-      {labelNode: '', editorNode: <StopButton/>}
+      {labelNode: 'Fov', editorNode: <Fov/>},
+      {labelNode: 'Progress', editorNode: <Progress/>}
     ];
   }
 }

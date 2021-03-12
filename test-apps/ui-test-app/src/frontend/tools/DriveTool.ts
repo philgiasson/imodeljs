@@ -6,7 +6,6 @@ import {
   BeButtonEvent,
   BeWheelEvent,
   EventHandled,
-  HitDetail,
   IModelApp,
   LocateResponse,
   PrimitiveTool,
@@ -55,6 +54,14 @@ export class DriveTool extends PrimitiveTool {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
     console.warn(hit);
     this._manager.setHit(hit);
+    return EventHandled.Yes;
+  }
+
+
+  public async onKeyTransition(_wentDown: boolean, _keyEvent: KeyboardEvent): Promise<EventHandled> {
+    if (_wentDown && _keyEvent.key === "t") {
+      this._manager.toggleMovement();
+    }
     return EventHandled.Yes;
   }
 

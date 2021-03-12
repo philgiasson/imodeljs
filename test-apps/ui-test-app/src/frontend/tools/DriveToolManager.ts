@@ -13,33 +13,50 @@ import {
 import { Easing } from '@bentley/imodeljs-common';
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
 import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
-import { GeometricElement3d } from '../../../../../core/backend';
 import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
 
 export class DriveToolManager {
-
   private _viewport?: ScreenViewport;
 
   private _cameraPosition?: Point3d;
-  private _cameraLookAt?: Vector3d;
 
+  private _cameraLookAt?: Vector3d;
   private _curveChain?: CurveChainWithDistanceIndex;
+
   private _target?: Point3d;
   private _targetDistance = 0;
   private _zAxisOffset = 1.5;
+  private _progress = 0;
 
-  private _currentFraction = 0;
   private _intervalId?: NodeJS.Timeout;
   private _intervalTime = 0.5;
   private _moving = false;
-
   private _speed = 30;
-  public get speed() {
+  private _fov = 75;
+
+  public get progress(): number {
+    return this._progress;
+  }
+
+  public set progress(value: number) {
+    this._progress = value;
+  }
+
+  public get speed(): number {
     return this._speed;
   }
 
   public set speed(value: number) {
     this._speed = value;
+  }
+
+  public get fov(): number {
+    return this._fov;
+  }
+
+  public set fov(value: number) {
+    this._fov = value;
+    this.updateCamera();
   }
 
   public get zAxisOffset() {
@@ -76,20 +93,24 @@ export class DriveToolManager {
     }
   }
 
-  private step(): void {
-    if (this._curveChain) {
-      const fraction = (this._speed * this._intervalTime) / this._curveChain.curveLength();
-      this._currentFraction += fraction;
-      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
-      this._cameraPosition = this._curveChain?.fractionToPoint(this._currentFraction);
-      this.updateCamera();
+  public stop(): void {
+    if (this._intervalId) {
+      this._moving = false;
+      clearTimeout(this._intervalId);
     }
   }
 
-  public stop(): void {
-    this._moving = false;
-    if (this._intervalId) {
-      clearTimeout(this._intervalId);
+  public toggleMovement(): void {
+    this._moving ? this.stop() : this.launch();
+  }
+
+  private step(): void {
+    if (this._curveChain) {
+      const fraction = (this._speed * this._intervalTime) / this._curveChain.curveLength();
+      this._progress += fraction;
+      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._progress).getDirectionRef();
+      this._cameraPosition = this._curveChain?.fractionToPoint(this._progress);
+      this.updateCamera();
     }
   }
 
@@ -128,10 +149,11 @@ export class DriveToolManager {
       this._curveChain = CurveChainWithDistanceIndex.createCapture(path);
     }
 
-    this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getOriginRef();
-    this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._currentFraction).getDirectionRef();
+    this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._progress).getOriginRef();
+    this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._progress).getDirectionRef();
     this.updateCamera();
   }
+
 
   private updateCamera(): void {
     const vp = this._viewport;
@@ -152,7 +174,7 @@ export class DriveToolManager {
     if (this._cameraPosition && this._cameraLookAt) {
       const eyePoint = Point3d.createFrom(this._cameraPosition);
       eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
-      view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(120));
+      view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(this._fov));
     }
 
     vp.synchWithView({
