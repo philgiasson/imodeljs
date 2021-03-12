@@ -9,11 +9,11 @@ import {
   OutputMessagePriority,
   QuantityType,
   ScreenViewport,
-} from '@bentley/imodeljs-frontend';
-import { Easing } from '@bentley/imodeljs-common';
-import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
-import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
-import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
+} from "@bentley/imodeljs-frontend";
+import { Easing } from "@bentley/imodeljs-common";
+import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
+import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
+import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
 
 export class DriveToolManager {
   private _viewport?: ScreenViewport;
@@ -40,6 +40,7 @@ export class DriveToolManager {
 
   public set progress(value: number) {
     this._progress = value;
+    this.setStep(this._progress);
   }
 
   public get speed(): number {
@@ -108,8 +109,14 @@ export class DriveToolManager {
     if (this._curveChain) {
       const fraction = (this._speed * this._intervalTime) / this._curveChain.curveLength();
       this._progress += fraction;
-      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._progress).getDirectionRef();
-      this._cameraPosition = this._curveChain?.fractionToPoint(this._progress);
+      this.setStep(this._progress);
+    }
+  }
+
+  private setStep(fraction: number) {
+    if (this._curveChain) {
+      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(fraction).getDirectionRef();
+      this._cameraPosition = this._curveChain?.fractionToPoint(fraction);
       this.updateCamera();
     }
   }
@@ -154,7 +161,6 @@ export class DriveToolManager {
     this.updateCamera();
   }
 
-
   private updateCamera(): void {
     const vp = this._viewport;
     if (undefined === vp)
@@ -164,13 +170,13 @@ export class DriveToolManager {
     if (!view.is3d() || !view.allow3dManipulations())
       return;
 
-    //if (this._cameraPosition && !this._cameraLookAt) {
+    // if (this._cameraPosition && !this._cameraLookAt) {
     //  const eyePoint = Point3d.createFrom(this._cameraPosition);
     //  eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
     //  view.camera.setEyePoint(eyePoint);
-    //}
+    // }
 
-    //change target of camera
+    // change target of camera
     if (this._cameraPosition && this._cameraLookAt) {
       const eyePoint = Point3d.createFrom(this._cameraPosition);
       eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
