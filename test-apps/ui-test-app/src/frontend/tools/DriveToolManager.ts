@@ -31,6 +31,7 @@ export class DriveToolManager {
   private _currentFraction = 0;
   private _intervalId?: NodeJS.Timeout;
   private _intervalTime = 0.5;
+  private _moving = false;
 
   private _speed = 30;
   public get speed() {
@@ -71,7 +72,8 @@ export class DriveToolManager {
   }
 
   public launch(): void {
-    if (this._curveChain) {
+    if (!this._moving) {
+      this._moving = true;
       this._intervalId = setInterval(() => {
         this.step();
       }, this._intervalTime * 1000);
@@ -89,6 +91,7 @@ export class DriveToolManager {
   }
 
   public stop(): void {
+    this._moving = false;
     if (this._intervalId) {
       clearTimeout(this._intervalId);
     }
