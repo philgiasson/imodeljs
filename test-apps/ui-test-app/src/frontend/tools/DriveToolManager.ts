@@ -135,7 +135,7 @@ export class DriveToolManager {
       const direction = Vector3d.createFrom(this._target.minus(this._cameraPosition));
       this._targetDistance = direction?.distance(Vector3d.create(0, 0, 0));
 
-      IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then((formatter) => {
+      void IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then((formatter) => {
         const formattedDistance = IModelApp.quantityFormatter.formatQuantity(this._targetDistance, formatter);
         IModelApp.notifications.outputMessage(
           new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${formattedDistance}`)

@@ -11,8 +11,8 @@ import {
   PrimitiveTool,
   ToolAssistance,
   ToolAssistanceImage,
-} from '@bentley/imodeljs-frontend';
-import { DriveToolManager } from './DriveToolManager';
+} from "@bentley/imodeljs-frontend";
+import { DriveToolManager } from "./DriveToolManager";
 
 export class DriveTool extends PrimitiveTool {
 
@@ -32,7 +32,7 @@ export class DriveTool extends PrimitiveTool {
   public onPostInstall() {
     super.onPostInstall();
     IModelApp.accuSnap.enableSnap(true);
-    this._manager.init(IModelApp.viewManager.selectedView).then();
+    void this._manager.init(IModelApp.viewManager.selectedView).then();
     this.setupAndPromptForNextAction();
   }
 
@@ -52,11 +52,9 @@ export class DriveTool extends PrimitiveTool {
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-    console.warn(hit);
     this._manager.setHit(hit);
     return EventHandled.Yes;
   }
-
 
   public async onKeyTransition(_wentDown: boolean, _keyEvent: KeyboardEvent): Promise<EventHandled> {
     if (_wentDown && _keyEvent.key === "t") {
