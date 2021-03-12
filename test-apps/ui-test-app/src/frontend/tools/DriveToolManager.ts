@@ -60,14 +60,10 @@ export class DriveToolManager {
     if (!view.is3d() || !view.allow3dManipulations())
       return;
 
+    // TODO: review behavior when size > 1
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
-
       await this.setOrigin(selectedElementId);
-
-    } else {
-      const msg = `Must select only 1 element`;
-      IModelApp.notifications.outputMessage(new NotifyMessageDetails(OutputMessagePriority.Warning, msg));
     }
   }
 
