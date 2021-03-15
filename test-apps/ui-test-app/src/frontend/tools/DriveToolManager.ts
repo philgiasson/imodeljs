@@ -10,7 +10,7 @@ import {
   QuantityType,
   ScreenViewport,
   ViewState3d,
-} from '@bentley/imodeljs-frontend';
+} from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
