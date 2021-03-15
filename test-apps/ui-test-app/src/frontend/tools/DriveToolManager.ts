@@ -9,7 +9,8 @@ import {
   OutputMessagePriority,
   QuantityType,
   ScreenViewport,
-} from "@bentley/imodeljs-frontend";
+  ViewState3d,
+} from '@bentley/imodeljs-frontend';
 import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
@@ -17,14 +18,12 @@ import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
 
 export class DriveToolManager {
   private _viewport?: ScreenViewport;
+  private _view?: ViewState3d;
 
   private _cameraPosition?: Point3d;
-
   private _cameraLookAt?: Vector3d;
-  private _curveChain?: CurveChainWithDistanceIndex;
+  private _selectedCurve?: CurveChainWithDistanceIndex;
 
-  private _target?: Point3d;
-  private _targetDistance = 0;
   private _zAxisOffset = 1.5;
   private _progress = 0;
 
@@ -69,19 +68,21 @@ export class DriveToolManager {
     this.updateCamera();
   }
 
-  public async init(viewport?: ScreenViewport): Promise<void> {
-    this._viewport = viewport;
-    if (undefined === viewport)
+  public async init(): Promise<void> {
+    this._viewport = IModelApp.viewManager.selectedView;
+    if (undefined === this._viewport)
       return;
 
-    const view = viewport.view;
+    const view = this._viewport.view;
     if (!view.is3d() || !view.allow3dManipulations())
       return;
+
+    this._view = view;
 
     // TODO: review behavior when size > 1
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
-      await this.setOrigin(selectedElementId);
+      await this.setSelectedCurve(selectedElementId);
     }
   }
 
@@ -105,38 +106,21 @@ export class DriveToolManager {
     this._moving ? this.stop() : this.launch();
   }
 
-  private step(): void {
-    if (this._curveChain) {
-      const fraction = (this._speed * this._intervalTime) / this._curveChain.curveLength();
-      this._progress += fraction;
-      this.updateProgress();
-    }
-  }
-
-  private updateProgress() {
-    if (this._curveChain) {
-      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._progress).getDirectionRef();
-      this._cameraPosition = this._curveChain?.fractionToPoint(this._progress);
-      this.updateCamera();
-    }
-  }
-
   public setHit(hit: HitDetail | undefined): void {
-    if (this._curveChain) {
-      this.setTarget(hit?.getPoint());
+    if (this._selectedCurve) {
+      this.calculateDistance(hit?.getPoint());
     } else {
-      void this.setOrigin(hit?.sourceId);
+      void this.setSelectedCurve(hit?.sourceId);
     }
   }
 
-  public setTarget(newTarget: Point3d | undefined): void {
-    this._target = newTarget;
-    if (this._cameraPosition && this._target) {
-      const direction = Vector3d.createFrom(this._target.minus(this._cameraPosition));
-      this._targetDistance = direction?.distance(Vector3d.create(0, 0, 0));
+  public calculateDistance(target: Point3d | undefined): void {
+    if (this._cameraPosition && target) {
+      const distanceVector = Vector3d.createFrom(target.minus(this._cameraPosition));
+      const distance = distanceVector?.distance(Vector3d.create(0, 0, 0));
 
       void IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then((formatter) => {
-        const formattedDistance = IModelApp.quantityFormatter.formatQuantity(this._targetDistance, formatter);
+        const formattedDistance = IModelApp.quantityFormatter.formatQuantity(distance, formatter);
         IModelApp.notifications.outputMessage(
           new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${formattedDistance}`)
         );
@@ -144,46 +128,48 @@ export class DriveToolManager {
     }
   }
 
-  public async setOrigin(selectedElementId: any) {
-    const viewport = this._viewport;
-    if (undefined === viewport)
+  public async setSelectedCurve(selectedElementId: any) {
+    if (!this._view)
       return;
-    const view = viewport?.view;
 
-    const response = await CustomRpcInterface.getClient().queryPath(view.iModel.getRpcProps(), selectedElementId);
+    const response = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), selectedElementId);
     const path = CustomRpcUtilities.parsePath(response);
     if (path) {
-      this._curveChain = CurveChainWithDistanceIndex.createCapture(path);
+      this._selectedCurve = CurveChainWithDistanceIndex.createCapture(path);
     }
 
-    this._cameraPosition = this._curveChain?.fractionToPointAndDerivative(this._progress).getOriginRef();
-    this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._progress).getDirectionRef();
+    this._cameraPosition = this._selectedCurve?.fractionToPointAndDerivative(this._progress).getOriginRef();
+    this._cameraLookAt = this._selectedCurve?.fractionToPointAndDerivative(this._progress).getDirectionRef();
     this.updateCamera();
   }
 
+  private step(): void {
+    if (this._selectedCurve) {
+      const fraction = (this._speed * this._intervalTime) / this._selectedCurve.curveLength();
+      this._progress += fraction;
+      this.updateProgress();
+    }
+  }
+
+  private updateProgress() {
+    if (this._selectedCurve) {
+      this._cameraLookAt = this._selectedCurve?.fractionToPointAndDerivative(this._progress).getDirectionRef();
+      this._cameraPosition = this._selectedCurve?.fractionToPoint(this._progress);
+      this.updateCamera();
+    }
+  }
+
   private updateCamera(): void {
-    const vp = this._viewport;
-    if (undefined === vp)
+    if (!this._viewport || !this._view)
       return;
 
-    const view = vp.view;
-    if (!view.is3d() || !view.allow3dManipulations())
-      return;
-
-    // if (this._cameraPosition && !this._cameraLookAt) {
-    //  const eyePoint = Point3d.createFrom(this._cameraPosition);
-    //  eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
-    //  view.camera.setEyePoint(eyePoint);
-    // }
-
-    // change target of camera
     if (this._cameraPosition && this._cameraLookAt) {
       const eyePoint = Point3d.createFrom(this._cameraPosition);
       eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
-      view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(this._fov));
+      this._view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(this._fov));
     }
 
-    vp.synchWithView({
+    this._viewport.synchWithView({
       animateFrustumChange: true,
       animationTime: this._intervalTime * 1000,
       easingFunction: Easing.Linear.None,

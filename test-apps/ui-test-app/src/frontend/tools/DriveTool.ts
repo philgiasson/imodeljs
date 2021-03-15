@@ -32,7 +32,7 @@ export class DriveTool extends PrimitiveTool {
   public onPostInstall() {
     super.onPostInstall();
     IModelApp.accuSnap.enableSnap(true);
-    void this._manager.init(IModelApp.viewManager.selectedView).then();
+    void this._manager.init().then();
     this.setupAndPromptForNextAction();
   }
 
