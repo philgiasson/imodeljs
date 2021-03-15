@@ -40,7 +40,7 @@ export class DriveToolManager {
 
   public set progress(value: number) {
     this._progress = value;
-    this.setStep(this._progress);
+    this.updateProgress();
   }
 
   public get speed(): number {
@@ -109,14 +109,14 @@ export class DriveToolManager {
     if (this._curveChain) {
       const fraction = (this._speed * this._intervalTime) / this._curveChain.curveLength();
       this._progress += fraction;
-      this.setStep(this._progress);
+      this.updateProgress();
     }
   }
 
-  private setStep(fraction: number) {
+  private updateProgress() {
     if (this._curveChain) {
-      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(fraction).getDirectionRef();
-      this._cameraPosition = this._curveChain?.fractionToPoint(fraction);
+      this._cameraLookAt = this._curveChain?.fractionToPointAndDerivative(this._progress).getDirectionRef();
+      this._cameraPosition = this._curveChain?.fractionToPoint(this._progress);
       this.updateCamera();
     }
   }
