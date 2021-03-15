@@ -14,7 +14,7 @@ import * as React from "react";
 import { IModelApp } from "@bentley/imodeljs-frontend";
 import { DriveTool } from "../../tools/DriveTool";
 
-function ZAxisOffset() {
+function Height() {
   const [offset, setOffset] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.zAxisOffset : 0);
   const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
     const value = values[0];
@@ -82,7 +82,7 @@ class DriveToolUiProvider extends ToolUiProvider {
 
   private getHorizontalToolSettings(): ToolSettingsEntry[] | undefined {
     return [
-      {labelNode: "ZAxisOffset", editorNode: <ZAxisOffset/>},
+      {labelNode: "Height", editorNode: <Height/>},
       {labelNode: "Speed", editorNode: <Speed/>},
       {labelNode: "Fov", editorNode: <Fov/>},
       {labelNode: "Progress", editorNode: <Progress/>},
