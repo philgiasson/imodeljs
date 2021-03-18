@@ -15,8 +15,10 @@ import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
 import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
+import { DriveToolConfig } from './DriveToolConfig';
 
 export class DriveToolManager {
+
   private _viewport?: ScreenViewport;
   private _view?: ViewState3d;
 
@@ -24,14 +26,16 @@ export class DriveToolManager {
   private _cameraLookAt?: Vector3d;
   private _selectedCurve?: CurveChainWithDistanceIndex;
 
-  private _zAxisOffset = 1.5;
-  private _progress = 0;
+  private _zAxisOffset = DriveToolConfig.zAxisOffsetDefault;
+  private _lateralOffset = DriveToolConfig.lateralOffsetDefault;
+  private _speed = DriveToolConfig.speedDefault;
+  private _fov = DriveToolConfig.fovDefault;
 
-  private _intervalId?: NodeJS.Timeout;
-  private _intervalTime = 0.5;
   private _moving = false;
-  private _speed = 30;
-  private _fov = 75;
+  private _progress = 0;
+  private _intervalTime = 0.5;
+  private _intervalId?: NodeJS.Timeout;
+
 
   public get progress(): number {
     return this._progress;
@@ -47,6 +51,8 @@ export class DriveToolManager {
   }
 
   public set speed(value: number) {
+    value = value <= DriveToolConfig.speedMax ? value : DriveToolConfig.speedMax;
+    value = value >= DriveToolConfig.speedMin ? value : DriveToolConfig.speedMin;
     this._speed = value;
   }
 
@@ -55,6 +61,8 @@ export class DriveToolManager {
   }
 
   public set fov(value: number) {
+    value = value <= DriveToolConfig.fovMax ? value : DriveToolConfig.fovMax;
+    value = value >= DriveToolConfig.fovMin ? value : DriveToolConfig.fovMin;
     this._fov = value;
     this.updateCamera();
   }
@@ -64,7 +72,20 @@ export class DriveToolManager {
   }
 
   public set zAxisOffset(value: number) {
+    value = value <= DriveToolConfig.zAxisOffsetMax ? value : DriveToolConfig.zAxisOffsetMax;
+    value = value >= DriveToolConfig.zAxisOffsetMin ? value : DriveToolConfig.zAxisOffsetMin;
     this._zAxisOffset = value;
+    this.updateCamera();
+  }
+
+  public get lateralOffset() {
+    return this._lateralOffset;
+  }
+
+  public set lateralOffset(value: number) {
+    value = value <= DriveToolConfig.lateralOffsetMax ? value : DriveToolConfig.lateralOffsetMax;
+    value = value >= DriveToolConfig.lateralOffsetMin ? value : DriveToolConfig.lateralOffsetMin;
+    this._lateralOffset = value;
     this.updateCamera();
   }
 
@@ -136,11 +157,8 @@ export class DriveToolManager {
     const path = CustomRpcUtilities.parsePath(response);
     if (path) {
       this._selectedCurve = CurveChainWithDistanceIndex.createCapture(path);
+      this.updateProgress();
     }
-
-    this._cameraPosition = this._selectedCurve?.fractionToPointAndDerivative(this._progress).getOriginRef();
-    this._cameraLookAt = this._selectedCurve?.fractionToPointAndDerivative(this._progress).getDirectionRef();
-    this.updateCamera();
   }
 
   private step(): void {
@@ -153,7 +171,7 @@ export class DriveToolManager {
 
   private updateProgress() {
     if (this._selectedCurve) {
-      this._cameraLookAt = this._selectedCurve?.fractionToPointAndDerivative(this._progress).getDirectionRef();
+      this._cameraLookAt = this._selectedCurve?.fractionToPointAndUnitTangent(this._progress).getDirectionRef();
       this._cameraPosition = this._selectedCurve?.fractionToPoint(this._progress);
       this.updateCamera();
     }
@@ -166,6 +184,7 @@ export class DriveToolManager {
     if (this._cameraPosition && this._cameraLookAt) {
       const eyePoint = Point3d.createFrom(this._cameraPosition);
       eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
+      eyePoint.addInPlace(Vector3d.unitZ().crossProduct(this._cameraLookAt).scale(-this._lateralOffset));
       this._view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(this._fov));
     }
 

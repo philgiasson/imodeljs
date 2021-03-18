@@ -13,6 +13,7 @@ import {
   ToolAssistanceImage,
 } from "@bentley/imodeljs-frontend";
 import { DriveToolManager } from "./DriveToolManager";
+import { DriveToolConfig } from './DriveToolConfig';
 
 export class DriveTool extends PrimitiveTool {
 
@@ -20,6 +21,8 @@ export class DriveTool extends PrimitiveTool {
   public static iconSpec = "icon-airplane";
 
   private _manager = new DriveToolManager();
+  private _keyIntervalId?: NodeJS.Timeout;
+  private _keyIntervalTime = 50;
 
   public get manager() {
     return this._manager;
@@ -49,12 +52,11 @@ export class DriveTool extends PrimitiveTool {
 
     const toggleInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
     const speedInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["W", "S"]), "Adjust speed");
+    const heightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["Q", "E"]), "Adjust height");
     const lateralOffsetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["A", "D"]), "Adjust lateral offset");
-    const increaseHeightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.shiftKeyboardInfo, "Increase height");
-    const decreaseHeightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.ctrlKeyboardInfo, "Decrease height");
     const fovInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.MouseWheel, "Adjust Fov");
 
-    const section1 = ToolAssistance.createSection([toggleInstruction, speedInstruction, lateralOffsetInstruction, increaseHeightInstruction, decreaseHeightInstruction, fovInstruction]);
+    const section1 = ToolAssistance.createSection([toggleInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction]);
     const instructions = ToolAssistance.createInstructions(mainInstruction, [section1]);
     IModelApp.notifications.setToolAssistance(instructions);
   }
@@ -66,8 +68,19 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public async onKeyTransition(_wentDown: boolean, _keyEvent: KeyboardEvent): Promise<EventHandled> {
-    if (_wentDown && _keyEvent.key === "t") {
-      this._manager.toggleMovement();
+    if (this._keyIntervalId) {
+      clearTimeout(this._keyIntervalId);
+    }
+    if (_wentDown) {
+      switch (_keyEvent.key) {
+        case 't': this._manager.toggleMovement(); break;
+        case 'w': this._keyIntervalId = setInterval(() => {this._manager.speed -= DriveToolConfig.speedStep}, this._keyIntervalTime); break;
+        case 's': this._keyIntervalId = setInterval(() => {this._manager.speed += DriveToolConfig.speedStep}, this._keyIntervalTime); break;
+        case 'a': this._keyIntervalId = setInterval(() => {this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep}, this._keyIntervalTime); break;
+        case 'd': this._keyIntervalId = setInterval(() => {this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep}, this._keyIntervalTime); break;
+        case 'q': this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset -= DriveToolConfig.speedStep}, this._keyIntervalTime); break;
+        case 'e': this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset += DriveToolConfig.speedStep}, this._keyIntervalTime); break;
+      }
     }
     return EventHandled.Yes;
   }

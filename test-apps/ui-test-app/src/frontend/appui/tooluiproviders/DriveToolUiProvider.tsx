@@ -13,6 +13,7 @@ import { Slider } from "@bentley/ui-core";
 import * as React from "react";
 import { IModelApp } from "@bentley/imodeljs-frontend";
 import { DriveTool } from "../../tools/DriveTool";
+import { DriveToolConfig } from '../../tools/DriveToolConfig';
 
 function Height() {
   const [offset, setOffset] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.zAxisOffset : 0);
@@ -24,8 +25,29 @@ function Height() {
   }, []);
   return (
     <Slider style={{minWidth: "160px"}}
-      min={0} max={5} values={[offset]} step={0.1} showMinMax={true}
-      showTooltip tooltipBelow onChange={handleSliderChange}/>
+            min={DriveToolConfig.zAxisOffsetMin}
+            max={DriveToolConfig.zAxisOffsetMax}
+            step={DriveToolConfig.zAxisOffsetStep}
+            values={[offset]}
+            showMinMax={true} showTooltip tooltipBelow onChange={handleSliderChange}/>
+  );
+}
+
+function LateralOffset() {
+  const [offset, setOffset] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.lateralOffset : 0);
+  const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
+    const value = values[0];
+    if (IModelApp.toolAdmin.activeTool)
+      (IModelApp.toolAdmin.activeTool as DriveTool).manager.lateralOffset = value;
+    setOffset(value);
+  }, []);
+  return (
+    <Slider style={{minWidth: "160px"}}
+            min={DriveToolConfig.lateralOffsetMin}
+            max={DriveToolConfig.lateralOffsetMax}
+            step={DriveToolConfig.lateralOffsetStep}
+            values={[offset]}
+            showMinMax={true} showTooltip tooltipBelow onChange={handleSliderChange}/>
   );
 }
 
@@ -39,8 +61,11 @@ function Speed() {
   }, []);
   return (
     <Slider style={{minWidth: "160px"}}
-      min={-50} max={50} values={[speed]} step={1} showMinMax={true}
-      showTooltip tooltipBelow onChange={handleSliderChange}/>
+            min={DriveToolConfig.speedMin}
+            max={DriveToolConfig.speedMax}
+            step={DriveToolConfig.speedStep}
+            values={[speed]}
+            showMinMax={true} showTooltip tooltipBelow onChange={handleSliderChange}/>
   );
 }
 
@@ -54,8 +79,11 @@ function Fov() {
   }, []);
   return (
     <Slider style={{minWidth: "160px"}}
-      min={0} max={180} values={[fov]} step={1} showMinMax={true}
-      showTooltip tooltipBelow onChange={handleSliderChange}/>
+            min={DriveToolConfig.fovMin}
+            max={DriveToolConfig.fovMax}
+            step={DriveToolConfig.fovStep}
+            values={[fov]}
+            showMinMax={true} showTooltip tooltipBelow onChange={handleSliderChange}/>
   );
 }
 
@@ -83,6 +111,7 @@ class DriveToolUiProvider extends ToolUiProvider {
   private getHorizontalToolSettings(): ToolSettingsEntry[] | undefined {
     return [
       {labelNode: "Height", editorNode: <Height/>},
+      {labelNode: "LateralOffset", editorNode: <LateralOffset/>},
       {labelNode: "Speed", editorNode: <Speed/>},
       {labelNode: "Fov", editorNode: <Fov/>},
       {labelNode: "Progress", editorNode: <Progress/>},
