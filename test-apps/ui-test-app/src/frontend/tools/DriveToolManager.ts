@@ -15,6 +15,7 @@ import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
 import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
+import { DriveToolConfig } from './DriveToolConfig';
 
 export class DriveToolManager {
 
@@ -25,10 +26,10 @@ export class DriveToolManager {
   private _cameraLookAt?: Vector3d;
   private _selectedCurve?: CurveChainWithDistanceIndex;
 
-  private _zAxisOffset = 1.5;
-  private _lateralOffset = 0;
-  private _speed = 30;
-  private _fov = 75;
+  private _zAxisOffset = DriveToolConfig.zAxisOffsetDefault;
+  private _lateralOffset = DriveToolConfig.lateralOffsetDefault;
+  private _speed = DriveToolConfig.speedDefault;
+  private _fov = DriveToolConfig.fovDefault;
 
   private _moving = false;
   private _progress = 0;
@@ -50,6 +51,8 @@ export class DriveToolManager {
   }
 
   public set speed(value: number) {
+    value = value <= DriveToolConfig.speedMax ? value : DriveToolConfig.speedMax;
+    value = value >= DriveToolConfig.speedMin ? value : DriveToolConfig.speedMin;
     this._speed = value;
   }
 
@@ -58,6 +61,8 @@ export class DriveToolManager {
   }
 
   public set fov(value: number) {
+    value = value <= DriveToolConfig.fovMax ? value : DriveToolConfig.fovMax;
+    value = value >= DriveToolConfig.fovMin ? value : DriveToolConfig.fovMin;
     this._fov = value;
     this.updateCamera();
   }
@@ -67,6 +72,8 @@ export class DriveToolManager {
   }
 
   public set zAxisOffset(value: number) {
+    value = value <= DriveToolConfig.zAxisOffsetMax ? value : DriveToolConfig.zAxisOffsetMax;
+    value = value >= DriveToolConfig.zAxisOffsetMin ? value : DriveToolConfig.zAxisOffsetMin;
     this._zAxisOffset = value;
     this.updateCamera();
   }
@@ -76,6 +83,8 @@ export class DriveToolManager {
   }
 
   public set lateralOffset(value: number) {
+    value = value <= DriveToolConfig.lateralOffsetMax ? value : DriveToolConfig.lateralOffsetMax;
+    value = value >= DriveToolConfig.lateralOffsetMin ? value : DriveToolConfig.lateralOffsetMin;
     this._lateralOffset = value;
     this.updateCamera();
   }
