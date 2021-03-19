@@ -5,7 +5,6 @@
 import {
   BeButtonEvent,
   BeWheelEvent,
-  BingElevationProvider,
   DecorateContext,
   EventHandled,
   IModelApp,
@@ -16,7 +15,6 @@ import {
 } from "@bentley/imodeljs-frontend";
 import { DriveToolManager } from "./DriveToolManager";
 import { DriveToolConfig } from "./DriveToolConfig";
-import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 
 export class DriveTool extends PrimitiveTool {
 
@@ -101,7 +99,6 @@ export class DriveTool extends PrimitiveTool {
 
   public async onMouseMotion(ev: BeButtonEvent): Promise<void> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-
     console.warn(ev.viewPoint);
     this._manager.updateDecorationPosition(ev.viewPoint);
     this._manager.calculateDistance(hit?.getPoint());

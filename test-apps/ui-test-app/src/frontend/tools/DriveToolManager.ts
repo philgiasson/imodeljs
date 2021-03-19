@@ -3,11 +3,8 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import {
-  CanvasDecoration,
   HitDetail,
   IModelApp,
-  NotifyMessageDetails,
-  OutputMessagePriority,
   QuantityType,
   ScreenViewport,
   ViewState3d,
@@ -135,8 +132,8 @@ export class DriveToolManager {
   }
 
   public updateDecorationPosition(pt: Point3d) {
-    this._decoration.x = pt.x + 40;
-    this._decoration.y = pt.y + 5;
+    this._decoration.x = pt.x + 30;
+    this._decoration.y = pt.y + 10;
   }
 
   public setHit(hit: HitDetail | undefined): void {
