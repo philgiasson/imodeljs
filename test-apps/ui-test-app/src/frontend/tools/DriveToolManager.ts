@@ -111,7 +111,7 @@ export class DriveToolManager {
   }
 
   public launch(): void {
-    if (!this._moving) {
+    if (this._selectedCurve && !this._moving) {
       this._moving = true;
       this._intervalId = setInterval(() => {
         this.step();
