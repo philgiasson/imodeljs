@@ -130,22 +130,18 @@ export class DriveToolManager {
     this._moving ? this.stop() : this.launch();
   }
 
-  public updateDecoration(mousePosition: Point3d) {
-    this._decoration.mousePosition = mousePosition;
-  }
-
   public setHit(hit: HitDetail | undefined): void {
-    if (this._selectedCurve) {
-      this.calculateDistance(hit?.getPoint());
-    } else {
+    if (!this._selectedCurve) {
       void this.setSelectedCurve(hit?.sourceId);
     }
   }
 
-  public calculateDistance(target: Point3d | undefined): void {
+  public calculateDistance(target: Point3d | undefined): number {
     if (this._cameraPosition && target) {
       const distanceVector = Vector3d.createFrom(target.minus(this._cameraPosition));
-      this._decoration.distance = distanceVector?.distance(Vector3d.create(0, 0, 0));
+      return distanceVector?.distance(Vector3d.create(0, 0, 0));
+    } else {
+      return 0;
     }
   }
 

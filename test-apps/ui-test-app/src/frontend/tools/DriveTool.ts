@@ -79,8 +79,8 @@ export class DriveTool extends PrimitiveTool {
     if (_wentDown) {
       switch (_keyEvent.key) {
         case "t": this._manager.toggleMovement(); break;
-        case "w": this._keyIntervalId = setInterval(() => {this._manager.speed -= DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
-        case "s": this._keyIntervalId = setInterval(() => {this._manager.speed += DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
+        case "w": this._keyIntervalId = setInterval(() => {this._manager.speed += DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
+        case "s": this._keyIntervalId = setInterval(() => {this._manager.speed -= DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
         case "a": this._keyIntervalId = setInterval(() => {this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep;}, this._keyIntervalTime); break;
         case "d": this._keyIntervalId = setInterval(() => {this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep;}, this._keyIntervalTime); break;
         case "q": this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset -= DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
@@ -99,8 +99,8 @@ export class DriveTool extends PrimitiveTool {
 
   public async onMouseMotion(ev: BeButtonEvent): Promise<void> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-    this._manager.updateDecoration(ev.viewPoint);
-    this._manager.calculateDistance(hit?.getPoint());
+    this._manager.decoration.mousePosition = ev.viewPoint;
+    this._manager.decoration.distance = hit ? this._manager.calculateDistance(hit?.getPoint()) : 0;
   }
 
   public async onResetButtonUp(_ev: BeButtonEvent): Promise<EventHandled> {
