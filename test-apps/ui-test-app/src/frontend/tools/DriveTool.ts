@@ -5,6 +5,7 @@
 import {
   BeButtonEvent,
   BeWheelEvent,
+  DecorateContext,
   EventHandled,
   IModelApp,
   LocateResponse,
@@ -13,7 +14,7 @@ import {
   ToolAssistanceImage,
 } from "@bentley/imodeljs-frontend";
 import { DriveToolManager } from "./DriveToolManager";
-import { DriveToolConfig } from './DriveToolConfig';
+import { DriveToolConfig } from "./DriveToolConfig";
 
 export class DriveTool extends PrimitiveTool {
 
@@ -47,6 +48,10 @@ export class DriveTool extends PrimitiveTool {
     this.provideToolAssistance();
   }
 
+  public decorate(context: DecorateContext): void {
+    context.addCanvasDecoration(this._manager.decoration);
+  }
+
   protected provideToolAssistance(): void {
     const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
 
@@ -73,13 +78,13 @@ export class DriveTool extends PrimitiveTool {
     }
     if (_wentDown) {
       switch (_keyEvent.key) {
-        case 't': this._manager.toggleMovement(); break;
-        case 'w': this._keyIntervalId = setInterval(() => {this._manager.speed -= DriveToolConfig.speedStep}, this._keyIntervalTime); break;
-        case 's': this._keyIntervalId = setInterval(() => {this._manager.speed += DriveToolConfig.speedStep}, this._keyIntervalTime); break;
-        case 'a': this._keyIntervalId = setInterval(() => {this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep}, this._keyIntervalTime); break;
-        case 'd': this._keyIntervalId = setInterval(() => {this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep}, this._keyIntervalTime); break;
-        case 'q': this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset -= DriveToolConfig.speedStep}, this._keyIntervalTime); break;
-        case 'e': this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset += DriveToolConfig.speedStep}, this._keyIntervalTime); break;
+        case "t": this._manager.toggleMovement(); break;
+        case "w": this._keyIntervalId = setInterval(() => {this._manager.speed -= DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
+        case "s": this._keyIntervalId = setInterval(() => {this._manager.speed += DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
+        case "a": this._keyIntervalId = setInterval(() => {this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep;}, this._keyIntervalTime); break;
+        case "d": this._keyIntervalId = setInterval(() => {this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep;}, this._keyIntervalTime); break;
+        case "q": this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset -= DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
+        case "e": this._keyIntervalId = setInterval(() => {this._manager.zAxisOffset += DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
       }
     }
     return EventHandled.Yes;
@@ -90,6 +95,12 @@ export class DriveTool extends PrimitiveTool {
    */
   public async onMouseWheel(_ev: BeWheelEvent): Promise<EventHandled> {
     return EventHandled.Yes;
+  }
+
+  public async onMouseMotion(ev: BeButtonEvent): Promise<void> {
+    const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+    this._manager.updateDecoration(ev.viewPoint);
+    this._manager.calculateDistance(hit?.getPoint());
   }
 
   public async onResetButtonUp(_ev: BeButtonEvent): Promise<EventHandled> {

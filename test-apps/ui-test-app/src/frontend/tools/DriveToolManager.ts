@@ -5,8 +5,6 @@
 import {
   HitDetail,
   IModelApp,
-  NotifyMessageDetails,
-  OutputMessagePriority,
   QuantityType,
   ScreenViewport,
   ViewState3d,
@@ -15,7 +13,8 @@ import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
 import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
-import { DriveToolConfig } from './DriveToolConfig';
+import { DriveToolConfig } from "./DriveToolConfig";
+import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 
 export class DriveToolManager {
 
@@ -35,7 +34,11 @@ export class DriveToolManager {
   private _progress = 0;
   private _intervalTime = 0.5;
   private _intervalId?: NodeJS.Timeout;
+  private _decoration = new DistanceDisplayDecoration();
 
+  public get decoration(): DistanceDisplayDecoration {
+    return this._decoration;
+  }
 
   public get progress(): number {
     return this._progress;
@@ -127,6 +130,10 @@ export class DriveToolManager {
     this._moving ? this.stop() : this.launch();
   }
 
+  public updateDecoration(mousePosition: Point3d) {
+    this._decoration.mousePosition = mousePosition;
+  }
+
   public setHit(hit: HitDetail | undefined): void {
     if (this._selectedCurve) {
       this.calculateDistance(hit?.getPoint());
@@ -138,14 +145,7 @@ export class DriveToolManager {
   public calculateDistance(target: Point3d | undefined): void {
     if (this._cameraPosition && target) {
       const distanceVector = Vector3d.createFrom(target.minus(this._cameraPosition));
-      const distance = distanceVector?.distance(Vector3d.create(0, 0, 0));
-
-      void IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then((formatter) => {
-        const formattedDistance = IModelApp.quantityFormatter.formatQuantity(distance, formatter);
-        IModelApp.notifications.outputMessage(
-          new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${formattedDistance}`)
-        );
-      });
+      this._decoration.distance = distanceVector?.distance(Vector3d.create(0, 0, 0));
     }
   }
 
