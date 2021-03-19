@@ -157,6 +157,12 @@ export class DriveToolManager {
     }
   }
 
+  public reverseCurve(): void {
+    this._progress = 1 - this._progress;
+    this._selectedCurve?.reverseInPlace();
+    this.updateProgress();
+  }
+
   private step(): void {
     if (this._selectedCurve) {
       const fraction = (this._speed * this._intervalTime) / this._selectedCurve.curveLength();

@@ -20,8 +20,8 @@ export class DriveToolConfig {
   public static speedStep = 1;
   public static speedDefault = 100 / 3.6;
 
-  public static fovMin = 0;
-  public static fovMax = 180;
+  public static fovMin = 1;
+  public static fovMax = 179;
   public static fovStep = 1;
   public static fovDefault = 75;
 }

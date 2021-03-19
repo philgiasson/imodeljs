@@ -79,6 +79,7 @@ export class DriveTool extends PrimitiveTool {
     if (_wentDown) {
       switch (_keyEvent.key) {
         case "t": this._manager.toggleMovement(); break;
+        case "r": this._manager.reverseCurve(); break;
         case "w": this._keyIntervalId = setInterval(() => {this._manager.speed += DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
         case "s": this._keyIntervalId = setInterval(() => {this._manager.speed -= DriveToolConfig.speedStep;}, this._keyIntervalTime); break;
         case "a": this._keyIntervalId = setInterval(() => {this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep;}, this._keyIntervalTime); break;
@@ -94,6 +95,11 @@ export class DriveTool extends PrimitiveTool {
    * Handle onMouseWheel events to prevent zooming while using tool.
    */
   public async onMouseWheel(_ev: BeWheelEvent): Promise<EventHandled> {
+    if (_ev.wheelDelta > 0) {
+      this._manager.fov -= DriveToolConfig.fovStep * 5;
+    } else if (_ev.wheelDelta < 0) {
+      this._manager.fov += DriveToolConfig.fovStep * 5;
+    }
     return EventHandled.Yes;
   }
 
