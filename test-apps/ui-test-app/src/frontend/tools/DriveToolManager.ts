@@ -34,8 +34,7 @@ export class DriveToolManager {
   private _progress = 0;
   private _intervalTime = 0.5;
   private _intervalId?: NodeJS.Timeout;
-
-  private _decoration: DistanceDisplayDecoration = new DistanceDisplayDecoration();
+  private _decoration = new DistanceDisplayDecoration();
 
   public get decoration(): DistanceDisplayDecoration {
     return this._decoration;
@@ -131,9 +130,8 @@ export class DriveToolManager {
     this._moving ? this.stop() : this.launch();
   }
 
-  public updateDecorationPosition(pt: Point3d) {
-    this._decoration.x = pt.x + 30;
-    this._decoration.y = pt.y + 10;
+  public updateDecoration(mousePosition: Point3d) {
+    this._decoration.mousePosition = mousePosition;
   }
 
   public setHit(hit: HitDetail | undefined): void {
@@ -147,15 +145,7 @@ export class DriveToolManager {
   public calculateDistance(target: Point3d | undefined): void {
     if (this._cameraPosition && target) {
       const distanceVector = Vector3d.createFrom(target.minus(this._cameraPosition));
-      const distance = distanceVector?.distance(Vector3d.create(0, 0, 0));
-
-      void IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering).then((formatter) => {
-        const formattedDistance = IModelApp.quantityFormatter.formatQuantity(distance, formatter);
-        // IModelApp.notifications.outputMessage(
-        //   new NotifyMessageDetails(OutputMessagePriority.Info, `Distance: ${formattedDistance}`)
-        // );
-        this._decoration.text = formattedDistance;
-      });
+      this._decoration.distance = distanceVector?.distance(Vector3d.create(0, 0, 0));
     }
   }
 
