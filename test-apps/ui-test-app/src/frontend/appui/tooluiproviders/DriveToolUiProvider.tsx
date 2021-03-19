@@ -54,17 +54,17 @@ function LateralOffset() {
 function Speed() {
   const [speed, setSpeed] = React.useState((IModelApp.toolAdmin.activeTool) ? (IModelApp.toolAdmin.activeTool as DriveTool).manager.speed : 0);
   const handleSliderChange = React.useCallback((values: ReadonlyArray<number>) => {
-    const value = values[0];
+    const value = values[0] / 3.6;
     if (IModelApp.toolAdmin.activeTool)
       (IModelApp.toolAdmin.activeTool as DriveTool).manager.speed = value;
     setSpeed(value);
   }, []);
   return (
     <Slider style={{minWidth: "160px"}}
-            min={DriveToolConfig.speedMin}
-            max={DriveToolConfig.speedMax}
+            min={DriveToolConfig.speedMin * 3.6}
+            max={DriveToolConfig.speedMax * 3.6}
             step={DriveToolConfig.speedStep}
-            values={[speed]}
+            values={[speed * 3.6]}
             showMinMax={true} showTooltip tooltipBelow onChange={handleSliderChange}/>
   );
 }
@@ -110,11 +110,11 @@ class DriveToolUiProvider extends ToolUiProvider {
 
   private getHorizontalToolSettings(): ToolSettingsEntry[] | undefined {
     return [
-      {labelNode: "Height", editorNode: <Height/>},
-      {labelNode: "LateralOffset", editorNode: <LateralOffset/>},
-      {labelNode: "Speed", editorNode: <Speed/>},
-      {labelNode: "Fov", editorNode: <Fov/>},
-      {labelNode: "Progress", editorNode: <Progress/>},
+      {labelNode: "Height (m)", editorNode: <Height/>},
+      {labelNode: "LateralOffset (m)", editorNode: <LateralOffset/>},
+      {labelNode: "Speed (km/h)", editorNode: <Speed/>},
+      {labelNode: "Fov (deg)", editorNode: <Fov/>},
+      {labelNode: "Progress (%)", editorNode: <Progress/>},
     ];
   }
 }
