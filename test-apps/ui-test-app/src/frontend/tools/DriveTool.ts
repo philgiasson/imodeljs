@@ -114,6 +114,10 @@ export class DriveTool extends PrimitiveTool {
     return EventHandled.No;
   }
 
+  public onCleanup(): void {
+    this._manager.stop();
+  }
+
   public onRestartTool(): void {
     const tool = new DriveTool();
     if (!tool.run())
