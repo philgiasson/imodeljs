@@ -56,12 +56,13 @@ export class DriveTool extends PrimitiveTool {
     const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
 
     const toggleInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
+    const reverseInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["R"]), "Reverse direction");
     const speedInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["W", "S"]), "Adjust speed");
     const heightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["Q", "E"]), "Adjust height");
     const lateralOffsetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["A", "D"]), "Adjust lateral offset");
     const fovInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.MouseWheel, "Adjust Fov");
 
-    const section1 = ToolAssistance.createSection([toggleInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction]);
+    const section1 = ToolAssistance.createSection([toggleInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction]);
     const instructions = ToolAssistance.createInstructions(mainInstruction, [section1]);
     IModelApp.notifications.setToolAssistance(instructions);
   }
