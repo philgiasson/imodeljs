@@ -18,7 +18,6 @@ import "./widgets/PropertyGridDemoWidget";
 import "./widgets/VisibilityTreeWidget";
 import "./tooluiproviders/Tool1UiProvider";
 import "./tooluiproviders/Tool2UiProvider";
-import "./tooluiproviders/DriveToolUiProvider";
 import "./statusbars/AppStatusBar";
 import "./navigationaids/CubeExampleNavigationAid";
 import * as React from "react";

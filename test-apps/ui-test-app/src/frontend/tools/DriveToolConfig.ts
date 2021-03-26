@@ -5,10 +5,10 @@
 
 export class DriveToolConfig {
 
-  public static zAxisOffsetMin = 0.1;
-  public static zAxisOffsetMax = 5;
-  public static zAxisOffsetStep = 0.1;
-  public static zAxisOffsetDefault = 1.5;
+  public static heightMin = 0.1;
+  public static heightMax = 5;
+  public static heightStep = 0.1;
+  public static heightDefault = 1.5;
 
   public static lateralOffsetMin = -5;
   public static lateralOffsetMax = 5;

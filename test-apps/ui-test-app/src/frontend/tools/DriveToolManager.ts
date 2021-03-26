@@ -2,19 +2,13 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import {
-  HitDetail,
-  IModelApp,
-  QuantityType,
-  ScreenViewport,
-  ViewState3d,
-} from "@bentley/imodeljs-frontend";
-import { Easing } from "@bentley/imodeljs-common";
-import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
-import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
-import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
-import { DriveToolConfig } from "./DriveToolConfig";
-import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+import { HitDetail, IModelApp, ScreenViewport, ViewState3d, } from '@bentley/imodeljs-frontend';
+import { Easing } from '@bentley/imodeljs-common';
+import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
+import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
+import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
+import { DriveToolConfig } from './DriveToolConfig';
+import { DistanceDisplayDecoration } from './DistanceDisplayDecoration';
 
 export class DriveToolManager {
 
@@ -25,7 +19,7 @@ export class DriveToolManager {
   private _cameraLookAt?: Vector3d;
   private _selectedCurve?: CurveChainWithDistanceIndex;
 
-  private _zAxisOffset = DriveToolConfig.zAxisOffsetDefault;
+  private _height = DriveToolConfig.heightDefault;
   private _lateralOffset = DriveToolConfig.lateralOffsetDefault;
   private _speed = DriveToolConfig.speedDefault;
   private _fov = DriveToolConfig.fovDefault;
@@ -45,6 +39,8 @@ export class DriveToolManager {
   }
 
   public set progress(value: number) {
+    value = value > 0 ? value : 0;
+    value = value < 1 ? value : 1;
     this._progress = value;
     this.updateProgress();
   }
@@ -70,14 +66,14 @@ export class DriveToolManager {
     this.updateCamera();
   }
 
-  public get zAxisOffset() {
-    return this._zAxisOffset;
+  public get height() {
+    return this._height;
   }
 
-  public set zAxisOffset(value: number) {
-    value = value <= DriveToolConfig.zAxisOffsetMax ? value : DriveToolConfig.zAxisOffsetMax;
-    value = value >= DriveToolConfig.zAxisOffsetMin ? value : DriveToolConfig.zAxisOffsetMin;
-    this._zAxisOffset = value;
+  public set height(value: number) {
+    value = value <= DriveToolConfig.heightMax ? value : DriveToolConfig.heightMax;
+    value = value >= DriveToolConfig.heightMin ? value : DriveToolConfig.heightMin;
+    this._height = value;
     this.updateCamera();
   }
 
@@ -166,8 +162,7 @@ export class DriveToolManager {
   private step(): void {
     if (this._selectedCurve) {
       const fraction = (this._speed * this._intervalTime) / this._selectedCurve.curveLength();
-      this._progress += fraction;
-      this.updateProgress();
+      this.progress += fraction;
     }
   }
 
@@ -185,7 +180,7 @@ export class DriveToolManager {
 
     if (this._cameraPosition && this._cameraLookAt) {
       const eyePoint = Point3d.createFrom(this._cameraPosition);
-      eyePoint.addInPlace(Vector3d.unitZ(this._zAxisOffset));
+      eyePoint.addInPlace(Vector3d.unitZ(this._height));
       eyePoint.addInPlace(Vector3d.unitZ().crossProduct(this._cameraLookAt).scale(-this._lateralOffset));
       this._view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(this._fov));
     }

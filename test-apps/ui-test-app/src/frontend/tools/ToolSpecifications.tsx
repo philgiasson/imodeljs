@@ -29,7 +29,6 @@ import { AnalysisAnimationTool } from "../tools/AnalysisAnimation";
 import { Tool1 } from "../tools/Tool1";
 import { Tool2 } from "../tools/Tool2";
 import { ToolWithSettings } from "./ToolWithSettings";
-import { DriveTool } from "../tools/DriveTool";
 
 // cSpell:ignore appui appuiprovider
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -155,20 +154,6 @@ class AppItemsProvider implements UiItemsProvider {
 UiItemsManager.register(new AppItemsProvider());
 
 export class AppTools {
-
-  public static get driveTool() {
-    return new ToolItemDef({
-      toolId: DriveTool.toolId,
-      iconSpec: DriveTool.iconSpec,
-      label: () => "Drive Tool",
-      description: () => "Drive Tool Desc",
-      execute: () => {
-        IModelApp.tools.run(DriveTool.toolId);
-        AppItemsProvider.toggleStatusBarItem();
-        AppItemsProvider.toggleBackstageItem();
-      },
-    });
-  }
 
   public static get tool1() {
     return new ToolItemDef({
