@@ -7,14 +7,15 @@ import {
   BeWheelEvent,
   DecorateContext,
   EventHandled,
-  IModelApp,
+  IModelApp, LengthDescription,
   LocateResponse,
   PrimitiveTool,
   ToolAssistance,
   ToolAssistanceImage,
-} from "@bentley/imodeljs-frontend";
+} from '@bentley/imodeljs-frontend';
 import { DriveToolManager } from "./DriveToolManager";
 import { DriveToolConfig } from "./DriveToolConfig";
+import { DialogItem, DialogProperty, PropertyDescriptionHelper } from '../../../../../ui/abstract';
 
 export class DriveTool extends PrimitiveTool {
 
@@ -24,6 +25,8 @@ export class DriveTool extends PrimitiveTool {
   private _manager = new DriveToolManager();
   private _keyIntervalId?: NodeJS.Timeout;
   private _keyIntervalTime = 50;
+
+  public heightProperty = new DialogProperty<number>(new LengthDescription("height"), 1.5);
 
   public get manager() {
     return this._manager;
@@ -118,5 +121,12 @@ export class DriveTool extends PrimitiveTool {
     const tool = new DriveTool();
     if (!tool.run())
       this.exitTool();
+  }
+
+
+  public supplyToolSettingsProperties(): DialogItem[] | undefined {
+    const toolSettings = new Array<DialogItem>();
+    toolSettings.push(this.heightProperty.toDialogItem({ rowPriority: 1, columnIndex: 1 }));
+    return toolSettings;
   }
 }
