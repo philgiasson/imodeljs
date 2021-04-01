@@ -12,12 +12,12 @@ import {
   PrimitiveTool,
   ToolAssistance,
   ToolAssistanceImage,
-} from '@bentley/imodeljs-frontend';
-import { DriveToolManager } from './DriveToolManager';
-import { DriveToolConfig } from './DriveToolConfig';
-import { DialogItem, DialogPropertySyncItem } from '@bentley/ui-abstract';
-import { ToolItemDef } from '@bentley/ui-framework';
-import { DriveToolProperties } from './DriveToolProperties';
+} from "@bentley/imodeljs-frontend";
+import { DriveToolManager } from "./DriveToolManager";
+import { DriveToolConfig } from "./DriveToolConfig";
+import { DialogItem, DialogPropertySyncItem } from "@bentley/ui-abstract";
+import { ToolItemDef } from "@bentley/ui-framework";
+import { DriveToolProperties } from "./DriveToolProperties";
 
 export class DriveTool extends PrimitiveTool {
 
@@ -57,8 +57,8 @@ export class DriveTool extends PrimitiveTool {
       { value: { value: this._manager.lateralOffset}, propertyName: DriveToolProperties.lateralOffset.name },
       { value: { value: this._manager.speed * 3.6}, propertyName: DriveToolProperties.speed.name },
       { value: { value: this._manager.fov}, propertyName: DriveToolProperties.fov.name },
-      { value: { value: this._manager.progress}, propertyName: DriveToolProperties.progress.name }
-      ]);
+      { value: { value: this._manager.progress}, propertyName: DriveToolProperties.progress.name },
+    ]);
   }
 
   public get manager() {
@@ -115,43 +115,43 @@ export class DriveTool extends PrimitiveTool {
     }
     if (_wentDown) {
       switch (_keyEvent.key) {
-        case 't':
+        case "t":
           this._manager.toggleMovement();
           break;
-        case 'r':
+        case "r":
           this._manager.reverseCurve();
           break;
-        case 'w':
+        case "w":
           this._keyIntervalId = setInterval(() => {
             this._manager.speed += DriveToolConfig.speedStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 's':
+        case "s":
           this._keyIntervalId = setInterval(() => {
             this._manager.speed -= DriveToolConfig.speedStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'a':
+        case "a":
           this._keyIntervalId = setInterval(() => {
             this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'd':
+        case "d":
           this._keyIntervalId = setInterval(() => {
             this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'q':
+        case "q":
           this._keyIntervalId = setInterval(() => {
             this._manager.height -= DriveToolConfig.heightStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'e':
+        case "e":
           this._keyIntervalId = setInterval(() => {
             this._manager.height += DriveToolConfig.heightStep;
             this.syncAllSettings();
@@ -178,6 +178,7 @@ export class DriveTool extends PrimitiveTool {
   public async onMouseMotion(ev: BeButtonEvent): Promise<void> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
     this._manager.decoration.mousePosition = ev.viewPoint;
+    this._manager.mouseViewPoint = ev.viewPoint;
     this._manager.decoration.distance = hit ? this._manager.calculateDistance(hit?.getPoint()) : 0;
   }
 

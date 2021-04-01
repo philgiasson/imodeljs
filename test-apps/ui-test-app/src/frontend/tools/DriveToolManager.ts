@@ -2,13 +2,22 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { HitDetail, IModelApp, ScreenViewport, ViewState3d, } from '@bentley/imodeljs-frontend';
-import { Easing } from '@bentley/imodeljs-common';
-import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
-import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
-import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
-import { DriveToolConfig } from './DriveToolConfig';
-import { DistanceDisplayDecoration } from './DistanceDisplayDecoration';
+import {
+  BeButtonEvent,
+  HitDetail,
+  IModelApp,
+  LocateResponse,
+  ScreenViewport,
+  ViewRect,
+  ViewState3d,
+} from "@bentley/imodeljs-frontend";
+import { Easing } from "@bentley/imodeljs-common";
+import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
+import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
+import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
+import { DriveToolConfig } from "./DriveToolConfig";
+import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+import { Rect } from "@svgdotjs/svg.js";
 
 export class DriveToolManager {
 
@@ -29,6 +38,7 @@ export class DriveToolManager {
   private _intervalTime = 0.5;
   private _intervalId?: NodeJS.Timeout;
   private _decoration = new DistanceDisplayDecoration();
+  mouseViewPoint: Point3d | undefined;
 
   public get decoration(): DistanceDisplayDecoration {
     return this._decoration;
@@ -109,8 +119,39 @@ export class DriveToolManager {
   public launch(): void {
     if (this._selectedCurve && !this._moving) {
       this._moving = true;
-      this._intervalId = setInterval(() => {
+      this._intervalId = setInterval(async () => {
         this.step();
+        // PIXEL
+        // const testPointView = this.mouseEvent?.viewPoint;
+        // this._viewport?.dopick;
+        // if (testPointView) {
+        //   const pixelRadius = Math.floor(pickRadiusView + 0.5);
+        //   const rect = new ViewRect(testPointView.x - pixelRadius, testPointView.y - pixelRadius, testPointView.x + pixelRadius, testPointView.y + pixelRadius);
+        // }
+        // this._viewport?.readPixels(Rect);
+
+        // this._viewport?.getPixelDataWorldPoint(pixels,);
+        // console.warn(this.mouseEvent);
+        // this.decoration.distance = this.mouseEvent ? this.calculateDistance(this.mouseEvent?.testPoint) : 0;
+
+        // await IModelApp.accuSnap.reEvaluate();
+        // // const hit = IModelApp.accuSnap.currHit;
+        // const ev = new BeButtonEvent();
+        // IModelApp.toolAdmin.fillEventFromCursorLocation(ev);
+        // console.warn("ev:", ev);
+        // const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+        // this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
+        // // console.warn("apres: ", IMod
+
+        if (this._viewport && this.mouseViewPoint) {
+          const worldPoint = this._viewport?.viewToWorld(this.mouseViewPoint);
+          IModelApp.locateManager.clear();
+          const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, worldPoint, this._viewport, 1);
+          console.warn("hit: ", hit?.getPoint());
+          console.warn("wpoint: ", worldPoint);
+          this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
+        }
+
       }, this._intervalTime * 1000);
     }
   }
