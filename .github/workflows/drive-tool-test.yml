@@ -17,7 +17,9 @@ jobs:
 
       - name: Dependencies
         working-directory: ./test-apps/ui-test-app
-        run: rush install
+        run: |
+          npm install -g rush
+          rush install
 
       - name: Test
         working-directory: ./test-apps/ui-test-app
