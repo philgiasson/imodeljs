@@ -15,6 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Dependencies
+        working-directory: ./test-apps/ui-test-app
+        run: rush install
+
       - name: Test
         working-directory: ./test-apps/ui-test-app
         run: npm run test

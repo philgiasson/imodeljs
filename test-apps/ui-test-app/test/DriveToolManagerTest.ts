@@ -13,7 +13,6 @@ describe('DriveToolManager', function() {
   const manager = new DriveToolManager(decoration);
 
   describe('Constructor', function() {
-
     it('should return instance', function() {
       expect(manager).to.be.not.null;
     });
