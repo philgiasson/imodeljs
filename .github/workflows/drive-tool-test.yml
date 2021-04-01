@@ -14,11 +14,15 @@ jobs:
     
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 12.x
 
       - name: Install rush
-        run: node common/scripts/install-run-rush.js install
-      - run: rush install --no-link
-      - run: rush link
+        run: |
+          node common/scripts/install-run-rush.js install
+          rush install --no-link
+          rush link
 
       - name: Test
         working-directory: ./test-apps/ui-test-app
