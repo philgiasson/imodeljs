@@ -18,13 +18,14 @@ import { DriveToolConfig } from './DriveToolConfig';
 import { DialogItem, DialogPropertySyncItem } from '@bentley/ui-abstract';
 import { ToolItemDef } from '@bentley/ui-framework';
 import { DriveToolProperties } from './DriveToolProperties';
+import { DistanceDisplayDecoration } from './DistanceDisplayDecoration';
 
 export class DriveTool extends PrimitiveTool {
 
   public static toolId = "DriveTool";
   public static iconSpec = "icon-airplane";
 
-  private _manager = new DriveToolManager();
+  private _manager = new DriveToolManager(new DistanceDisplayDecoration());
   private _keyIntervalId?: NodeJS.Timeout;
   private _keyIntervalTime = 50;
 
