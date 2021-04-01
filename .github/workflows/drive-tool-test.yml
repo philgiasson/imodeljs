@@ -18,6 +18,12 @@ jobs:
         with:
           node-version: 12.x
 
+      - name: Setup Git
+        run: |
+          git config user.name philgiasson
+          git config user.email philgiasson@users.noreply.github.com
+
+
       - name: Install rush
         run: |
           node common/scripts/install-run-rush.js install
