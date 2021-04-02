@@ -134,23 +134,23 @@ export class DriveToolManager {
         // console.warn(this.mouseEvent);
         // this.decoration.distance = this.mouseEvent ? this.calculateDistance(this.mouseEvent?.testPoint) : 0;
 
-        // await IModelApp.accuSnap.reEvaluate();
-        // // const hit = IModelApp.accuSnap.currHit;
-        // const ev = new BeButtonEvent();
-        // IModelApp.toolAdmin.fillEventFromCursorLocation(ev);
-        // console.warn("ev:", ev);
-        // const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-        // this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
-        // // console.warn("apres: ", IMod
+        await IModelApp.accuSnap.reEvaluate();
+        const hit = IModelApp.accuSnap.currHit;
+        console.warn("hit:", hit);
+        const ev = new BeButtonEvent();
+        IModelApp.toolAdmin.fillEventFromCursorLocation(ev);
+        console.warn("ev:", ev);
+        const hit1 = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+        this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
 
-        if (this._viewport && this.mouseViewPoint) {
-          const worldPoint = this._viewport?.viewToWorld(this.mouseViewPoint);
-          IModelApp.locateManager.clear();
-          const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, worldPoint, this._viewport, 1);
-          console.warn("hit: ", hit?.getPoint());
-          console.warn("wpoint: ", worldPoint);
-          this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
-        }
+        // if (this._viewport && this.mouseViewPoint) {
+        //   const worldPoint = this._viewport?.viewToWorld(this.mouseViewPoint);
+        //   IModelApp.locateManager.clear();
+        //   const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, worldPoint, this._viewport, 1);
+        //   console.warn("hit: ", hit?.getPoint());
+        //   console.warn("wpoint: ", worldPoint);
+        //   this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
+        // }
 
       }, this._intervalTime * 1000);
     }
