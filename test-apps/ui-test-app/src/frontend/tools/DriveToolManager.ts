@@ -136,12 +136,15 @@ export class DriveToolManager {
 
         await IModelApp.accuSnap.reEvaluate();
         const hit = IModelApp.accuSnap.currHit;
-        console.warn("hit:", hit);
-        const ev = new BeButtonEvent();
-        IModelApp.toolAdmin.fillEventFromCursorLocation(ev);
-        console.warn("ev:", ev);
-        const hit1 = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+        console.warn("hit:", hit?.hitPoint);
         this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
+
+        // // This doesn't work because it use accuSnap witch is not updated
+        // const ev = new BeButtonEvent();
+        // IModelApp.toolAdmin.fillEventFromCursorLocation(ev);
+        // console.warn("ev:", ev);
+        // const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+        // this.decoration.distance = hit ? this.calculateDistance(hit?.getPoint()) : 0;
 
         // if (this._viewport && this.mouseViewPoint) {
         //   const worldPoint = this._viewport?.viewToWorld(this.mouseViewPoint);
