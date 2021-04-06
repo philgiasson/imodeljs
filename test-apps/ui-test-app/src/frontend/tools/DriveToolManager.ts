@@ -89,18 +89,31 @@ export class DriveToolManager {
   }
 
   public getPointsShape(): Point3d[] {
-
-    const y = 50;
-    const z = 5;
-
-    const tan = this._selectedCurve?.fractionToPointAndUnitTangent(this._progress + 0.1).getDirectionRef();
-    const pos = this._selectedCurve?.fractionToPoint(this._progress + 0.1);
-    if (pos) {
-      return [new Point3d(pos?.x, pos?.y-y/2, pos?.z-2), new Point3d(pos?.x, pos?.y-y/2, pos?.z+z-2),
-        new Point3d(pos?.x, pos?.y+y/2, pos?.z+z), new Point3d(pos?.x, pos?.y+y/2, pos?.z), new Point3d(pos?.x, pos?.y-y/2, pos?.z)];
-    } else {
+    if (!this._selectedCurve || !this._cameraPosition)
       return [new Point3d()];
-    }
+
+    const z = 5;
+    const distance = 400;
+
+    const fraction = distance/this._selectedCurve?.curveLength();
+    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
+
+    if (!position)
+      return [new Point3d()];
+
+    const direction = position.minus(this._cameraPosition);
+    const vectorDirection = Vector3d.createFrom(direction).normalize();
+    const vectorUp = new Vector3d(0, 0, z);
+
+    if (!vectorDirection)
+      return [new Point3d()];
+
+    const pos1 = position.plus(vectorUp.crossProduct(vectorDirection));
+    const pos2 = position.minus(vectorUp.crossProduct(vectorDirection));
+    const pos3 = pos2.plus(vectorUp);
+    const pos4 = pos1.plus(vectorUp);
+
+    return [pos1, pos2, pos3, pos4];
   }
 
   public async init(): Promise<void> {
