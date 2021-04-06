@@ -7,17 +7,20 @@ import {
   BeWheelEvent,
   DecorateContext,
   EventHandled,
+  GraphicType,
   IModelApp,
   LocateResponse,
   PrimitiveTool,
   ToolAssistance,
   ToolAssistanceImage,
-} from '@bentley/imodeljs-frontend';
-import { DriveToolManager } from './DriveToolManager';
-import { DriveToolConfig } from './DriveToolConfig';
-import { DialogItem, DialogPropertySyncItem } from '@bentley/ui-abstract';
-import { ToolItemDef } from '@bentley/ui-framework';
-import { DriveToolProperties } from './DriveToolProperties';
+} from "@bentley/imodeljs-frontend";
+import { DriveToolManager } from "./DriveToolManager";
+import { DriveToolConfig } from "./DriveToolConfig";
+import { DialogItem, DialogPropertySyncItem } from "@bentley/ui-abstract";
+import { ToolItemDef } from "@bentley/ui-framework";
+import { DriveToolProperties } from "./DriveToolProperties";
+import { ColorDef } from "@bentley/imodeljs-common";
+import { Point3d } from "@bentley/geometry-core";
 
 export class DriveTool extends PrimitiveTool {
 
@@ -57,8 +60,8 @@ export class DriveTool extends PrimitiveTool {
       { value: { value: this._manager.lateralOffset}, propertyName: DriveToolProperties.lateralOffset.name },
       { value: { value: this._manager.speed * 3.6}, propertyName: DriveToolProperties.speed.name },
       { value: { value: this._manager.fov}, propertyName: DriveToolProperties.fov.name },
-      { value: { value: this._manager.progress}, propertyName: DriveToolProperties.progress.name }
-      ]);
+      { value: { value: this._manager.progress}, propertyName: DriveToolProperties.progress.name },
+    ]);
   }
 
   public get manager() {
@@ -86,6 +89,22 @@ export class DriveTool extends PrimitiveTool {
 
   public decorate(context: DecorateContext): void {
     context.addCanvasDecoration(this._manager.decoration);
+
+    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration);
+
+    // const p1 = new Point3d(507952.7567721279, 6644859.954504891, 10.40852573719376);
+    // const p2 = new Point3d(507852.7567721279, 6644559.954504891, 15.40852573719376);
+    // const p3 = new Point3d(507912.7567721279, 6644869.954504891, 30.40852573719376);
+
+    builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
+
+    console.warn(this._manager.getPointsShape());
+
+    // builder.addPolyface
+
+    builder.addShape(this._manager.getPointsShape());
+
+    context.addDecorationFromBuilder(builder);
   }
 
   protected provideToolAssistance(): void {
@@ -105,6 +124,7 @@ export class DriveTool extends PrimitiveTool {
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+    console.warn("hit", hit);
     this._manager.setHit(hit);
     return EventHandled.Yes;
   }
@@ -115,43 +135,43 @@ export class DriveTool extends PrimitiveTool {
     }
     if (_wentDown) {
       switch (_keyEvent.key) {
-        case 't':
+        case "t":
           this._manager.toggleMovement();
           break;
-        case 'r':
+        case "r":
           this._manager.reverseCurve();
           break;
-        case 'w':
+        case "w":
           this._keyIntervalId = setInterval(() => {
             this._manager.speed += DriveToolConfig.speedStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 's':
+        case "s":
           this._keyIntervalId = setInterval(() => {
             this._manager.speed -= DriveToolConfig.speedStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'a':
+        case "a":
           this._keyIntervalId = setInterval(() => {
             this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'd':
+        case "d":
           this._keyIntervalId = setInterval(() => {
             this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'q':
+        case "q":
           this._keyIntervalId = setInterval(() => {
             this._manager.height -= DriveToolConfig.heightStep;
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case 'e':
+        case "e":
           this._keyIntervalId = setInterval(() => {
             this._manager.height += DriveToolConfig.heightStep;
             this.syncAllSettings();
