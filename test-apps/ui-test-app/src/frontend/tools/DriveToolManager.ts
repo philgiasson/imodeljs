@@ -29,6 +29,15 @@ export class DriveToolManager {
   private _intervalTime = 0.5;
   private _intervalId?: NodeJS.Timeout;
   private _decoration = new DistanceDisplayDecoration();
+  private _transientId?: string;
+
+  public get transientId(): string|undefined {
+    return this._transientId;
+  }
+
+  public set transientId(id: string|undefined) {
+    this._transientId = id;
+  }
 
   public get decoration(): DistanceDisplayDecoration {
     return this._decoration;
