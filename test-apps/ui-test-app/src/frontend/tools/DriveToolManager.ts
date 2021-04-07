@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { HitDetail, IModelApp, ScreenViewport, ViewState3d } from "@bentley/imodeljs-frontend";
+import { HitDetail, IModelApp, Pixel, ScreenViewport, ViewRect, ViewState3d } from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
@@ -102,7 +102,7 @@ export class DriveToolManager {
       return [new Point3d()];
 
     const z = 5;
-    const distance = 400;
+    const distance = 300;
 
     const fraction = distance/this._selectedCurve?.curveLength();
     const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
@@ -141,7 +141,6 @@ export class DriveToolManager {
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
       await this.setSelectedCurve(selectedElementId);
-      // view.iModel.selectionSet.emptyAll();
     }
   }
 
@@ -150,7 +149,36 @@ export class DriveToolManager {
       this._moving = true;
       this._intervalId = setInterval(() => {
         this.step();
+        this.checkIfTargetVisible();
       }, this._intervalTime * 1000);
+    }
+  }
+
+  public checkIfTargetVisible() {
+    if (this.transientId) {
+      const rect = this._viewport?.viewRect;
+      if (rect) {
+
+        const midY = Math.floor(rect.height/2);
+        const midX = Math.floor(rect.width/2);
+
+        console.warn(midX,midY);
+
+        this._viewport?.readPixels(rect, Pixel.Selector.All, (pixels) => {
+
+          const id = pixels?.getPixel(midX, midY).elementId;
+          console.warn(pixels?.getPixel(midX, midY+50));
+          // for (let y=midY-10; y < midY+10; y++) {
+          //   for (let x=midX-10; x < midX+10; y++) {
+          //     const pixel = pixels?.getPixel(x, y);
+          //     if (pixel?.elementId === this._transientId) {
+          //       console.warn("true");
+          //     }
+          //   }
+          // }
+          // console.warn(pixels?.getPixel(midX,midY).elementId);
+        }, true);
+      }
     }
   }
 
