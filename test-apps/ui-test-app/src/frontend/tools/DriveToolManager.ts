@@ -2,18 +2,18 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { HitDetail, IModelApp, ScreenViewport, ViewState3d, } from '@bentley/imodeljs-frontend';
-import { Easing } from '@bentley/imodeljs-common';
-import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
-import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
-import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
-import { DriveToolConfig } from './DriveToolConfig';
-import { DistanceDisplayDecoration } from './DistanceDisplayDecoration';
+import { HitDetail, IModelApp, ScreenViewport, ViewState3d } from "@bentley/imodeljs-frontend";
+import { Easing } from "@bentley/imodeljs-common";
+import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
+import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
+import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
+import { DriveToolConfig } from "./DriveToolConfig";
+import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 
 export class DriveToolManager {
 
   private _viewport?: ScreenViewport;
-  private _view?: ViewState3d;
+  public _view?: ViewState3d;
 
   private _cameraPosition?: Point3d;
   private _cameraLookAt?: Vector3d;
@@ -90,7 +90,23 @@ export class DriveToolManager {
     this.updateCamera();
   }
 
+  public getPointsShape(): Point3d[] {
+
+    const y = 50;
+    const z = 5;
+
+    const tan = this._selectedCurve?.fractionToPointAndUnitTangent(this._progress + 0.1).getDirectionRef();
+    const pos = this._selectedCurve?.fractionToPoint(this._progress + 0.1);
+    if (pos) {
+      return [new Point3d(pos?.x, pos?.y-y/2, pos?.z-2), new Point3d(pos?.x, pos?.y-y/2, pos?.z+z-2),
+        new Point3d(pos?.x, pos?.y+y/2, pos?.z+z), new Point3d(pos?.x, pos?.y+y/2, pos?.z), new Point3d(pos?.x, pos?.y-y/2, pos?.z)];
+    } else {
+      return [new Point3d()];
+    }
+  }
+
   public async init(): Promise<void> {
+
     this._viewport = IModelApp.viewManager.selectedView;
     if (undefined === this._viewport)
       return;
@@ -105,6 +121,7 @@ export class DriveToolManager {
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
       await this.setSelectedCurve(selectedElementId);
+      // view.iModel.selectionSet.emptyAll();
     }
   }
 
