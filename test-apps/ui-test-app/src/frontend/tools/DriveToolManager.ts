@@ -2,13 +2,20 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { HitDetail, IModelApp, ScreenViewport, ViewState3d } from "@bentley/imodeljs-frontend";
-import { Easing } from "@bentley/imodeljs-common";
-import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
-import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
-import { Angle } from "@bentley/geometry-core/lib/geometry3d/Angle";
-import { DriveToolConfig } from "./DriveToolConfig";
-import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+import {
+  HitDetail,
+  IModelApp,
+  NotifyMessageDetails,
+  OutputMessagePriority,
+  ScreenViewport,
+  ViewState3d,
+} from '@bentley/imodeljs-frontend';
+import { Easing } from '@bentley/imodeljs-common';
+import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
+import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
+import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
+import { DriveToolConfig } from './DriveToolConfig';
+import { DistanceDisplayDecoration } from './DistanceDisplayDecoration';
 
 export class DriveToolManager {
 
@@ -164,12 +171,18 @@ export class DriveToolManager {
     if (!this._view)
       return;
 
-    const response = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), selectedElementId);
-    const path = CustomRpcUtilities.parsePath(response);
+    const pathResponse = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), selectedElementId);
+    const path = CustomRpcUtilities.parsePath(pathResponse);
+
     if (path) {
       this._selectedCurve = CurveChainWithDistanceIndex.createCapture(path);
       this.updateProgress();
+    } else {
+      const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Can't find path for selected element");
+      IModelApp.notifications.outputMessage(message);
     }
+
+    this._view.iModel.selectionSet.emptyAll();
   }
 
   public reverseCurve(): void {
