@@ -20,7 +20,7 @@ export class DistanceDisplayDecoration implements CanvasDecoration {
 
 
   constructor() {
-    IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering)
+    IModelApp.quantityFormatter?.getFormatterSpecByQuantityType(QuantityType.LengthEngineering)
       .then((formatter) => { this._formatter = formatter; });
   }
 

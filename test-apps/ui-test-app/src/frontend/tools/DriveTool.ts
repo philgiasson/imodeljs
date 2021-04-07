@@ -21,13 +21,14 @@ import { ToolItemDef } from "@bentley/ui-framework";
 import { DriveToolProperties } from "./DriveToolProperties";
 import { ColorDef } from "@bentley/imodeljs-common";
 import { Point3d } from "@bentley/geometry-core";
+import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 
 export class DriveTool extends PrimitiveTool {
 
   public static toolId = "DriveTool";
   public static iconSpec = "icon-airplane";
 
-  private _manager = new DriveToolManager();
+  private _manager = new DriveToolManager(new DistanceDisplayDecoration());
   private _keyIntervalId?: NodeJS.Timeout;
   private _keyIntervalTime = 50;
 
