@@ -20,7 +20,6 @@ import { DialogItem, DialogPropertySyncItem } from "@bentley/ui-abstract";
 import { ToolItemDef } from "@bentley/ui-framework";
 import { DriveToolProperties } from "./DriveToolProperties";
 import { ColorDef } from "@bentley/imodeljs-common";
-import { Point3d } from "@bentley/geometry-core";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 
 export class DriveTool extends PrimitiveTool {

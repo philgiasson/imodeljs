@@ -69,7 +69,7 @@ import { Tool2 } from "./tools/Tool2";
 import { ToolWithDynamicSettings } from "./tools/ToolWithDynamicSettings";
 import { ToolWithSettings } from "./tools/ToolWithSettings";
 import { UiProviderTool } from "./tools/UiProviderTool";
-import { DriveTool } from './tools/DriveTool';
+import { DriveTool } from "./tools/drivetool/DriveTool";
 
 // Initialize my application gateway configuration for the frontend
 RpcConfiguration.developmentMode = true;
