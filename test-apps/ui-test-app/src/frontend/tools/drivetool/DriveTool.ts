@@ -119,7 +119,13 @@ export class DriveTool extends PrimitiveTool {
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
+<<<<<<< HEAD
     this._manager.setHit(hit);
+=======
+    if (hit?.sourceId) {
+      await this._manager.setSelectedCurve(hit.sourceId);
+    }
+>>>>>>> feature/drive-tool
     return EventHandled.Yes;
   }
 
@@ -196,8 +202,7 @@ export class DriveTool extends PrimitiveTool {
 
   public async onMouseMotion(ev: BeButtonEvent): Promise<void> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-    this._manager.decoration.mousePosition = ev.viewPoint;
-    this._manager.decoration.distance = hit ? this._manager.calculateDistance(hit?.getPoint()) : 0;
+    this._manager.updateMouseDecoration(ev.viewPoint, hit);
   }
 
   public async onResetButtonUp(_ev: BeButtonEvent): Promise<EventHandled> {

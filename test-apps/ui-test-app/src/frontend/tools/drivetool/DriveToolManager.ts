@@ -17,13 +17,17 @@ import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+<<<<<<< HEAD
 import { autorun } from "mobx";
+=======
+import { DistanceUtils } from "./DistanceUtils";
+>>>>>>> feature/drive-tool
 
 export class DriveToolManager {
 
   /** Viewport used by the tool */
   private _viewport?: ScreenViewport;
-  /** Viewport used by the tool */
+  /** View state used by the tool */
   public _view?: ViewState3d;
 
   /** Curve to follow when enabling movement */
@@ -36,7 +40,7 @@ export class DriveToolManager {
 
   /** Indicates wether movement is currently enabled */
   private _moving = false;
-  /** Current movement progress accross the selected curve from 0 to 1 */
+  /** Current movement progress along the selected curve from 0 to 1 */
   private _progress = 0;
   /** Current position on the curve */
   private _positionOnCurve?: Point3d;
@@ -157,6 +161,9 @@ export class DriveToolManager {
     return [pos1, pos2, pos3, pos4];
   }
 
+  /**
+   *  Sets the current viewport and view state. If an element is selected, sets it as selected curve.
+   */
   public async init(): Promise<void> {
     this._viewport = IModelApp.viewManager.selectedView;
     if (undefined === this._viewport)
@@ -175,6 +182,9 @@ export class DriveToolManager {
     }
   }
 
+  /**
+   * Starts the movement along the selected curve
+   */
   public launch(): void {
     if (this._selectedCurve && !this._moving) {
       this._moving = true;
@@ -224,6 +234,9 @@ export class DriveToolManager {
     this._autoStop ? this._autoStop = false : this._autoStop = true;
   }
 
+  /**
+   * Stops the movement along the selected curve
+   */
   public stop(): void {
     if (this._intervalId) {
       this._moving = false;
@@ -232,30 +245,22 @@ export class DriveToolManager {
     }
   }
 
+  /**
+   * Toggles the movement along the seelcted curve
+   */
   public toggleMovement(): void {
     this._moving ? this.stop() : this.launch();
   }
 
-  public setHit(hit: HitDetail | undefined): void {
-    if (!this._selectedCurve) {
-      void this.setSelectedCurve(hit?.sourceId);
-    }
-  }
-
-  public calculateDistance(target: Point3d | undefined): number {
-    if (this._positionOnCurve && target) {
-      const distanceVector = Vector3d.createFrom(target.minus(this._positionOnCurve));
-      return distanceVector?.distance(Vector3d.create(0, 0, 0));
-    } else {
-      return 0;
-    }
-  }
-
-  public async setSelectedCurve(selectedElementId: any) {
-    if (!this._view)
+  /**
+   * Tries to retrieve a curve from the given element id then sets it as the selected curve
+   * @param elementId - Element from which to retrieve the curve
+   */
+  public async setSelectedCurve(elementId: string): Promise<void> {
+    if (this._selectedCurve || !this._view)
       return;
 
-    const pathResponse = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), selectedElementId);
+    const pathResponse = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), elementId);
     const path = CustomRpcUtilities.parsePath(pathResponse);
 
     if (path) {
@@ -269,12 +274,33 @@ export class DriveToolManager {
     this._view.iModel.selectionSet.emptyAll();
   }
 
+  /**
+   * Reverse the curve to change the direction of the movement along the curve
+   */
   public reverseCurve(): void {
     this._progress = 1 - this._progress;
     this._selectedCurve?.reverseInPlace();
     this.updateProgress();
   }
 
+  /**
+   * Updates distance mouse decoration
+   * @param mousePosition - Current mouse position in view coordinates
+   * @param hit - Current hit at mouse position
+   */
+  public updateMouseDecoration(mousePosition: Point3d, hit: HitDetail | undefined): void {
+    this.decoration.mousePosition = mousePosition;
+    if (this._positionOnCurve && hit) {
+      this.decoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
+    } else {
+      this.decoration.distance = 0;
+    }
+  }
+
+  /**
+   * Makes an increment of the movement along the curve
+   * @private
+   */
   private step(): void {
     if (this._selectedCurve) {
       const fraction = (this._speed * this._intervalTime) / this._selectedCurve.curveLength();
@@ -282,7 +308,11 @@ export class DriveToolManager {
     }
   }
 
-  private updateProgress() {
+  /**
+   * Sets the current position on curve and camera direction based on current progress.
+   * @private
+   */
+  private updateProgress(): void {
     if (this._selectedCurve) {
       this._cameraLookAt = this._selectedCurve?.fractionToPointAndUnitTangent(this._progress).getDirectionRef();
       this._positionOnCurve = this._selectedCurve?.fractionToPoint(this._progress);
@@ -290,6 +320,11 @@ export class DriveToolManager {
     }
   }
 
+  /**
+   * Sets the camera position based on the position on the curve and the offsets.
+   * Syncs the camera properties with the viewport.
+   * @private
+   */
   private updateCamera(): void {
     if (!this._viewport || !this._view)
       return;
