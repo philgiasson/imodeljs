@@ -56,6 +56,7 @@ export class DriveToolManager {
   private _target = true;
   /** Indicates if simulation should stop when the target is no longer visible */
   private _autoStop = true;
+  private _targetDistance = DriveToolConfig.targetDistance;
   /** Id of the target */
   private _targetId?: string;
 
@@ -132,11 +133,19 @@ export class DriveToolManager {
     this.updateCamera();
   }
 
+  public get targetDistance() {
+    return this._targetDistance;
+  }
+
+  public set targetDistance(value: number) {
+    this._targetDistance = value;
+  }
+
   public getPointsShape(): Point3d[] {
     if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
 
-    const fraction = DriveToolConfig.targetDistance / this._selectedCurve?.curveLength();
+    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
     const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
 
     if (!position)
