@@ -2,10 +2,10 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DriveToolManager } from '../src/frontend/tools/DriveToolManager';
+import { DriveToolManager } from '../src/frontend/tools/drivetool/DriveToolManager';
 import { expect } from 'chai';
-import { DistanceDisplayDecoration } from '../src/frontend/tools/DistanceDisplayDecoration';
-import { DriveToolConfig } from '../src/frontend/tools/DriveToolConfig';
+import { DistanceDisplayDecoration } from '../src/frontend/tools/drivetool/DistanceDisplayDecoration';
+import { DriveToolConfig } from '../src/frontend/tools/drivetool/DriveToolConfig';
 
 describe('DriveToolManager', function() {
 
