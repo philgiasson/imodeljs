@@ -93,11 +93,13 @@ export class DriveTool extends PrimitiveTool {
     if (undefined === this._manager.targetId)
       this._manager.targetId = context.viewport.iModel.transientIds.next;
 
-    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
-    builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
-    builder.addShape(this._manager.getPointsShape());
+    if (this._manager.target) {
+      const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
+      builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
+      builder.addShape(this._manager.getPointsShape());
 
-    context.addDecorationFromBuilder(builder);
+      context.addDecorationFromBuilder(builder);
+    }
   }
 
   protected provideToolAssistance(): void {
@@ -117,7 +119,6 @@ export class DriveTool extends PrimitiveTool {
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-    console.warn("hit", hit);
     this._manager.setHit(hit);
     return EventHandled.Yes;
   }
@@ -168,6 +169,11 @@ export class DriveTool extends PrimitiveTool {
           this._keyIntervalId = setInterval(() => {
             this._manager.height += DriveToolConfig.heightStep;
             this.syncAllSettings();
+          }, this._keyIntervalTime);
+          break;
+        case "l":
+          this._keyIntervalId = setInterval(() => {
+            this._manager.toggleTarget();
           }, this._keyIntervalTime);
           break;
       }
