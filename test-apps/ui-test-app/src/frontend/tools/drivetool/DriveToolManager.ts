@@ -185,13 +185,18 @@ export class DriveToolManager {
         const midX = Math.floor(rect.width/2);
 
         this._viewport?.readPixels(rect, Pixel.Selector.All, (pixels) => {
-
-          for (let y=midY-10; y < midY+10; y++) {
-            for (let x=midX-10; x < midX+10; x++) {
+          let hit = false;
+          for (let y = midY - 10; y < midY + 10 && !hit; y++) {
+            for (let x = midX - 10; x < midX + 10 && !hit; x++) {
               if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
-                console.warn("true");
+                hit = true;
+                console.warn("hit");
               }
             }
+          }
+          if (!hit) {
+            console.warn("no hit");
+            this.stop();
           }
         }, true);
       }
