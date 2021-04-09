@@ -105,27 +105,24 @@ export class DriveTool extends PrimitiveTool {
   protected provideToolAssistance(): void {
     const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
 
-    const toggleInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
+    const toggleMovementInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
     const reverseInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["R"]), "Reverse direction");
     const speedInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["W", "S"]), "Adjust speed");
     const heightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["Q", "E"]), "Adjust height");
     const lateralOffsetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["A", "D"]), "Adjust lateral offset");
+    const toggleTargetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["L"]), "Toggle target");
     const fovInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.MouseWheel, "Adjust Fov");
 
-    const section1 = ToolAssistance.createSection([toggleInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction]);
+    const section1 = ToolAssistance.createSection([toggleMovementInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction, toggleTargetInstruction]);
     const instructions = ToolAssistance.createInstructions(mainInstruction, [section1]);
     IModelApp.notifications.setToolAssistance(instructions);
   }
 
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
-<<<<<<< HEAD
-    this._manager.setHit(hit);
-=======
     if (hit?.sourceId) {
       await this._manager.setSelectedCurve(hit.sourceId);
     }
->>>>>>> feature/drive-tool
     return EventHandled.Yes;
   }
 
@@ -140,6 +137,9 @@ export class DriveTool extends PrimitiveTool {
           break;
         case "r":
           this._manager.reverseCurve();
+          break;
+        case "l":
+          this._manager.toggleTarget();
           break;
         case "w":
           this._keyIntervalId = setInterval(() => {
@@ -177,11 +177,7 @@ export class DriveTool extends PrimitiveTool {
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
-        case "l":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.toggleTarget();
-          }, this._keyIntervalTime);
-          break;
+
       }
     }
     return EventHandled.Yes;

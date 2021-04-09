@@ -17,11 +17,7 @@ import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
-<<<<<<< HEAD
-import { autorun } from "mobx";
-=======
 import { DistanceUtils } from "./DistanceUtils";
->>>>>>> feature/drive-tool
 
 export class DriveToolManager {
 
@@ -230,8 +226,8 @@ export class DriveToolManager {
   }
 
   public toggleTarget(): void {
-    this._target ? this._target = false : this._target = true;
-    this._autoStop ? this._autoStop = false : this._autoStop = true;
+    this._target = !this._target;
+    this._autoStop = !this._autoStop;
   }
 
   /**

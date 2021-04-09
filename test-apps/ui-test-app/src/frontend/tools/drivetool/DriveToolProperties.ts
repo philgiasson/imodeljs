@@ -10,5 +10,4 @@ export class DriveToolProperties {
   public static speed: PropertyDescription = {name: "speed", displayLabel: "Speed (km/h)", typename: "number"};
   public static fov: PropertyDescription = {name: "fov", displayLabel: "Fov (deg)", typename: "number"};
   public static progress: PropertyDescription = {name: "progress", displayLabel: "Progress (%)", typename: "number"};
-  public static target: PropertyDescription = {name: "target", displayLabel: "target", typename: "boolean"};
 }
