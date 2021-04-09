@@ -47,7 +47,7 @@ import { VisibilityWidgetControl } from "../widgets/VisibilityWidget";
 import { NestedAnimationStage } from "./NestedAnimationStage";
 import { MapLayersWidgetControl } from "@bentley/map-layers"; // used to test map-layers widget control
 import { ToolWithDynamicSettings } from "../../tools/ToolWithDynamicSettings";
-import { DriveTool } from '../../tools/DriveTool';
+import { DriveTool } from "../../tools/drivetool/DriveTool";
 
 /* eslint-disable react/jsx-key */
 

@@ -9,31 +9,44 @@ import {
   OutputMessagePriority,
   ScreenViewport,
   ViewState3d,
-} from '@bentley/imodeljs-frontend';
-import { Easing } from '@bentley/imodeljs-common';
-import { CurveChainWithDistanceIndex, Point3d, Vector3d } from '@bentley/geometry-core';
-import { CustomRpcInterface, CustomRpcUtilities } from '../../common/CustomRpcInterface';
-import { Angle } from '@bentley/geometry-core/lib/geometry3d/Angle';
-import { DriveToolConfig } from './DriveToolConfig';
-import { DistanceDisplayDecoration } from './DistanceDisplayDecoration';
+} from "@bentley/imodeljs-frontend";
+import { Easing } from "@bentley/imodeljs-common";
+import { Angle, CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
+import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
+import { DriveToolConfig } from "./DriveToolConfig";
+import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 
 export class DriveToolManager {
 
+  /** Viewport used by the tool */
   private _viewport?: ScreenViewport;
+  /** Viewport used by the tool */
   public _view?: ViewState3d;
 
-  private _cameraPosition?: Point3d;
-  private _cameraLookAt?: Vector3d;
+  /** Curve to follow when enabling movement */
   private _selectedCurve?: CurveChainWithDistanceIndex;
 
-  private _height = DriveToolConfig.heightDefault;
-  private _lateralOffset = DriveToolConfig.lateralOffsetDefault;
-  private _speed = DriveToolConfig.speedDefault;
+  /** Vector indicating what direction the camera should be looking at */
+  private _cameraLookAt?: Vector3d;
+  /** Camera field of view */
   private _fov = DriveToolConfig.fovDefault;
 
+  /** Indicates wether movement is currently enabled */
   private _moving = false;
+  /** Current movement progress accross the selected curve from 0 to 1 */
   private _progress = 0;
-  private _intervalTime = 0.5;
+  /** Current position on the curve */
+  private _positionOnCurve?: Point3d;
+  /** Camera offset on the z axis from the current position on the selected curve */
+  private _height = DriveToolConfig.heightDefault;
+  /** Camera offset perpendicular to the view direction from the current position on the selected curve */
+  private _lateralOffset = DriveToolConfig.lateralOffsetDefault;
+  /** Speed of the movement along the selected curve in unit/s */
+  private _speed = DriveToolConfig.speedDefault;
+
+  /** Time between each calculation of the next position to move to along the curve */
+  private _intervalTime = DriveToolConfig.intervalTime;
+  /** Id of the current movement interval */
   private _intervalId?: NodeJS.Timeout;
 
   constructor(private _decoration: DistanceDisplayDecoration) {
@@ -113,7 +126,6 @@ export class DriveToolManager {
   }
 
   public async init(): Promise<void> {
-
     this._viewport = IModelApp.viewManager.selectedView;
     if (undefined === this._viewport)
       return;
@@ -128,7 +140,6 @@ export class DriveToolManager {
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
       await this.setSelectedCurve(selectedElementId);
-      // view.iModel.selectionSet.emptyAll();
     }
   }
 
@@ -145,6 +156,7 @@ export class DriveToolManager {
     if (this._intervalId) {
       this._moving = false;
       clearTimeout(this._intervalId);
+      this._intervalId = undefined;
     }
   }
 
@@ -159,8 +171,8 @@ export class DriveToolManager {
   }
 
   public calculateDistance(target: Point3d | undefined): number {
-    if (this._cameraPosition && target) {
-      const distanceVector = Vector3d.createFrom(target.minus(this._cameraPosition));
+    if (this._positionOnCurve && target) {
+      const distanceVector = Vector3d.createFrom(target.minus(this._positionOnCurve));
       return distanceVector?.distance(Vector3d.create(0, 0, 0));
     } else {
       return 0;
@@ -201,7 +213,7 @@ export class DriveToolManager {
   private updateProgress() {
     if (this._selectedCurve) {
       this._cameraLookAt = this._selectedCurve?.fractionToPointAndUnitTangent(this._progress).getDirectionRef();
-      this._cameraPosition = this._selectedCurve?.fractionToPoint(this._progress);
+      this._positionOnCurve = this._selectedCurve?.fractionToPoint(this._progress);
       this.updateCamera();
     }
   }
@@ -210,8 +222,8 @@ export class DriveToolManager {
     if (!this._viewport || !this._view)
       return;
 
-    if (this._cameraPosition && this._cameraLookAt) {
-      const eyePoint = Point3d.createFrom(this._cameraPosition);
+    if (this._positionOnCurve && this._cameraLookAt) {
+      const eyePoint = Point3d.createFrom(this._positionOnCurve);
       eyePoint.addInPlace(Vector3d.unitZ(this._height));
       eyePoint.addInPlace(Vector3d.unitZ().crossProduct(this._cameraLookAt).scale(-this._lateralOffset));
       this._view.lookAtUsingLensAngle(eyePoint, eyePoint.plus(this._cameraLookAt), new Vector3d(0, 0, 1), Angle.createDegrees(this._fov));

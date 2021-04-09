@@ -2,9 +2,9 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { CanvasDecoration, IModelApp, QuantityType } from '@bentley/imodeljs-frontend';
+import { CanvasDecoration, IModelApp, QuantityType } from "@bentley/imodeljs-frontend";
 import { Point3d } from "@bentley/geometry-core";
-import { FormatterSpec } from '@bentley/imodeljs-quantity';
+import { FormatterSpec } from "@bentley/imodeljs-quantity";
 
 export class DistanceDisplayDecoration implements CanvasDecoration {
 
