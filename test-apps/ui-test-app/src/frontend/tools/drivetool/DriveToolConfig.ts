@@ -26,4 +26,7 @@ export class DriveToolConfig {
   public static fovMax = 179;
   public static fovStep = 1;
   public static fovDefault = 75;
+
+  public static targetDistance = 100;
+  public static targetHeight = 5;
 }

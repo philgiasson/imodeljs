@@ -90,18 +90,11 @@ export class DriveTool extends PrimitiveTool {
   public decorate(context: DecorateContext): void {
     context.addCanvasDecoration(this._manager.decoration);
 
-    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration);
+    if (undefined === this._manager.targetId)
+      this._manager.targetId = context.viewport.iModel.transientIds.next;
 
-    // const p1 = new Point3d(507952.7567721279, 6644859.954504891, 10.40852573719376);
-    // const p2 = new Point3d(507852.7567721279, 6644559.954504891, 15.40852573719376);
-    // const p3 = new Point3d(507912.7567721279, 6644869.954504891, 30.40852573719376);
-
+    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
     builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
-
-    console.warn(this._manager.getPointsShape());
-
-    // builder.addPolyface
-
     builder.addShape(this._manager.getPointsShape());
 
     context.addDecorationFromBuilder(builder);

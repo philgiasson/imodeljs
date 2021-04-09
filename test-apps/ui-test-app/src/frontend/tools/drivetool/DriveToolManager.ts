@@ -7,6 +7,7 @@ import {
   IModelApp,
   NotifyMessageDetails,
   OutputMessagePriority,
+  Pixel,
   ScreenViewport,
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
@@ -49,7 +50,18 @@ export class DriveToolManager {
   /** Id of the current movement interval */
   private _intervalId?: NodeJS.Timeout;
 
+
+  private _targetId?: string;
+
   constructor(private _decoration: DistanceDisplayDecoration) {
+  }
+
+  public get targetId(): string|undefined {
+    return this._targetId;
+  }
+
+  public set targetId(id: string|undefined) {
+    this._targetId = id;
   }
 
   public get decoration(): DistanceDisplayDecoration {
@@ -111,18 +123,28 @@ export class DriveToolManager {
   }
 
   public getPointsShape(): Point3d[] {
-
-    const y = 50;
-    const z = 5;
-
-    const tan = this._selectedCurve?.fractionToPointAndUnitTangent(this._progress + 0.1).getDirectionRef();
-    const pos = this._selectedCurve?.fractionToPoint(this._progress + 0.1);
-    if (pos) {
-      return [new Point3d(pos?.x, pos?.y-y/2, pos?.z-2), new Point3d(pos?.x, pos?.y-y/2, pos?.z+z-2),
-        new Point3d(pos?.x, pos?.y+y/2, pos?.z+z), new Point3d(pos?.x, pos?.y+y/2, pos?.z), new Point3d(pos?.x, pos?.y-y/2, pos?.z)];
-    } else {
+    if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
-    }
+
+    const fraction = DriveToolConfig.targetDistance / this._selectedCurve?.curveLength();
+    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
+
+    if (!position)
+      return [new Point3d()];
+
+    const direction = position.minus(this._positionOnCurve);
+    const vectorDirection = Vector3d.createFrom(direction).normalize();
+    const vectorUp = new Vector3d(0, 0, DriveToolConfig.targetHeight);
+
+    if (!vectorDirection)
+      return [new Point3d()];
+
+    const pos1 = position.plus(vectorUp.crossProduct(vectorDirection));
+    const pos2 = position.minus(vectorUp.crossProduct(vectorDirection));
+    const pos3 = pos2.plus(vectorUp);
+    const pos4 = pos1.plus(vectorUp);
+
+    return [pos1, pos2, pos3, pos4];
   }
 
   public async init(): Promise<void> {
@@ -146,9 +168,38 @@ export class DriveToolManager {
   public launch(): void {
     if (this._selectedCurve && !this._moving) {
       this._moving = true;
+      this.step();
       this._intervalId = setInterval(() => {
         this.step();
+        this.checkIfTargetVisible();
       }, this._intervalTime * 1000);
+    }
+  }
+
+  public checkIfTargetVisible(): void {
+    if (this.targetId) {
+      const rect = this._viewport?.viewRect;
+      if (rect) {
+
+        const midY = Math.floor(rect.height/2);
+        const midX = Math.floor(rect.width/2);
+
+        this._viewport?.readPixels(rect, Pixel.Selector.All, (pixels) => {
+          let hit = false;
+          for (let y = midY - 10; y < midY + 10 && !hit; y++) {
+            for (let x = midX - 10; x < midX + 10 && !hit; x++) {
+              if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
+                hit = true;
+                console.warn("hit");
+              }
+            }
+          }
+          if (!hit) {
+            console.warn("no hit");
+            this.stop();
+          }
+        }, true);
+      }
     }
   }
 
