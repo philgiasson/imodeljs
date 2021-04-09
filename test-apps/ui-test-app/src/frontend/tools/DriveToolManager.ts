@@ -2,7 +2,8 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { HitDetail, IModelApp, Pixel, ScreenViewport, ViewRect, ViewState3d } from "@bentley/imodeljs-frontend";
+import { HitDetail, IModelApp, Pixel, ScreenViewport, ViewRect, ViewState3d, NotifyMessageDetails,
+  OutputMessagePriority, } from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
 import { CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../common/CustomRpcInterface";
@@ -30,6 +31,9 @@ export class DriveToolManager {
   private _intervalId?: NodeJS.Timeout;
   private _decoration = new DistanceDisplayDecoration();
   private _transientId?: string;
+
+  constructor(private _decoration: DistanceDisplayDecoration) {
+  }
 
   public get transientId(): string|undefined {
     return this._transientId;
@@ -212,12 +216,18 @@ export class DriveToolManager {
     if (!this._view)
       return;
 
-    const response = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), selectedElementId);
-    const path = CustomRpcUtilities.parsePath(response);
+    const pathResponse = await CustomRpcInterface.getClient().queryPath(this._view.iModel.getRpcProps(), selectedElementId);
+    const path = CustomRpcUtilities.parsePath(pathResponse);
+
     if (path) {
       this._selectedCurve = CurveChainWithDistanceIndex.createCapture(path);
       this.updateProgress();
+    } else {
+      const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Can't find path for selected element");
+      IModelApp.notifications.outputMessage(message);
     }
+
+    this._view.iModel.selectionSet.emptyAll();
   }
 
   public reverseCurve(): void {
