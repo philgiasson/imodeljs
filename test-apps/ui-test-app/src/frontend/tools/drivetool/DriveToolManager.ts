@@ -126,10 +126,7 @@ export class DriveToolManager {
     if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
 
-    const z = 5;
-    const distance = 300;
-
-    const fraction = distance/this._selectedCurve?.curveLength();
+    const fraction = DriveToolConfig.targetDistance / this._selectedCurve?.curveLength();
     const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
 
     if (!position)
@@ -137,7 +134,7 @@ export class DriveToolManager {
 
     const direction = position.minus(this._positionOnCurve);
     const vectorDirection = Vector3d.createFrom(direction).normalize();
-    const vectorUp = new Vector3d(0, 0, z);
+    const vectorUp = new Vector3d(0, 0, DriveToolConfig.targetHeight);
 
     if (!vectorDirection)
       return [new Point3d()];
