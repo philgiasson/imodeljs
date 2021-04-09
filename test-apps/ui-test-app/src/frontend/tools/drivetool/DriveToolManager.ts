@@ -7,6 +7,7 @@ import {
   IModelApp,
   NotifyMessageDetails,
   OutputMessagePriority,
+  Pixel,
   ScreenViewport,
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
@@ -48,18 +49,19 @@ export class DriveToolManager {
   private _intervalTime = DriveToolConfig.intervalTime;
   /** Id of the current movement interval */
   private _intervalId?: NodeJS.Timeout;
-  private _decoration = new DistanceDisplayDecoration();
-  private _transientId?: string;
+
+
+  private _targetId?: string;
 
   constructor(private _decoration: DistanceDisplayDecoration) {
   }
 
-  public get transientId(): string|undefined {
-    return this._transientId;
+  public get targetId(): string|undefined {
+    return this._targetId;
   }
 
-  public set transientId(id: string|undefined) {
-    this._transientId = id;
+  public set targetId(id: string|undefined) {
+    this._targetId = id;
   }
 
   public get decoration(): DistanceDisplayDecoration {
@@ -121,7 +123,7 @@ export class DriveToolManager {
   }
 
   public getPointsShape(): Point3d[] {
-    if (!this._selectedCurve || !this._cameraPosition)
+    if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
 
     const z = 5;
@@ -133,7 +135,7 @@ export class DriveToolManager {
     if (!position)
       return [new Point3d()];
 
-    const direction = position.minus(this._cameraPosition);
+    const direction = position.minus(this._positionOnCurve);
     const vectorDirection = Vector3d.createFrom(direction).normalize();
     const vectorUp = new Vector3d(0, 0, z);
 
@@ -169,6 +171,7 @@ export class DriveToolManager {
   public launch(): void {
     if (this._selectedCurve && !this._moving) {
       this._moving = true;
+      this.step();
       this._intervalId = setInterval(() => {
         this.step();
         this.checkIfTargetVisible();
@@ -176,29 +179,23 @@ export class DriveToolManager {
     }
   }
 
-  public checkIfTargetVisible() {
-    if (this.transientId) {
+  public checkIfTargetVisible(): void {
+    if (this.targetId) {
       const rect = this._viewport?.viewRect;
       if (rect) {
 
         const midY = Math.floor(rect.height/2);
         const midX = Math.floor(rect.width/2);
 
-        console.warn(midX,midY);
-
         this._viewport?.readPixels(rect, Pixel.Selector.All, (pixels) => {
 
-          const id = pixels?.getPixel(midX, midY).elementId;
-          console.warn(pixels?.getPixel(midX, midY+50));
-          // for (let y=midY-10; y < midY+10; y++) {
-          //   for (let x=midX-10; x < midX+10; y++) {
-          //     const pixel = pixels?.getPixel(x, y);
-          //     if (pixel?.elementId === this._transientId) {
-          //       console.warn("true");
-          //     }
-          //   }
-          // }
-          // console.warn(pixels?.getPixel(midX,midY).elementId);
+          for (let y=midY-10; y < midY+10; y++) {
+            for (let x=midX-10; x < midX+10; x++) {
+              if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
+                console.warn("true");
+              }
+            }
+          }
         }, true);
       }
     }

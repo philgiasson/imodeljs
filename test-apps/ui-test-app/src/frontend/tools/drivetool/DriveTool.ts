@@ -90,10 +90,10 @@ export class DriveTool extends PrimitiveTool {
   public decorate(context: DecorateContext): void {
     context.addCanvasDecoration(this._manager.decoration);
 
-    if (undefined === this._manager.transientId)
-      this._manager.transientId = context.viewport.iModel.transientIds.next;
+    if (undefined === this._manager.targetId)
+      this._manager.targetId = context.viewport.iModel.transientIds.next;
 
-    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.transientId);
+    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
     builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
     builder.addShape(this._manager.getPointsShape());
 
