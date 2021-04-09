@@ -9,10 +9,11 @@ import {
   OutputMessagePriority,
   Pixel,
   ScreenViewport,
+  ViewRect,
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
-import { Angle, CurveChainWithDistanceIndex, Point3d, Vector3d } from "@bentley/geometry-core";
+import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
@@ -51,10 +52,19 @@ export class DriveToolManager {
   /** Id of the current movement interval */
   private _intervalId?: NodeJS.Timeout;
 
-
+  /** Indicates if target should be render */
+  private _target = true;
+  /** Indicates if simulation should stop when the target is no longer visible */
+  private _autoStop = true;
+  private _targetDistance = DriveToolConfig.targetDistance;
+  /** Id of the target */
   private _targetId?: string;
 
   constructor(private _decoration: DistanceDisplayDecoration) {
+  }
+
+  public get target(): boolean {
+    return this._target;
   }
 
   public get targetId(): string|undefined {
@@ -123,11 +133,19 @@ export class DriveToolManager {
     this.updateCamera();
   }
 
+  public get targetDistance() {
+    return this._targetDistance;
+  }
+
+  public set targetDistance(value: number) {
+    this._targetDistance = value;
+  }
+
   public getPointsShape(): Point3d[] {
     if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
 
-    const fraction = DriveToolConfig.targetDistance / this._selectedCurve?.curveLength();
+    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
     const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
 
     if (!position)
@@ -178,36 +196,47 @@ export class DriveToolManager {
       this.step();
       this._intervalId = setInterval(() => {
         this.step();
-        this.checkIfTargetVisible();
+        if (this._autoStop)
+          this.checkIfTargetVisible();
       }, this._intervalTime * 1000);
     }
   }
 
   public checkIfTargetVisible(): void {
-    if (this.targetId) {
-      const rect = this._viewport?.viewRect;
-      if (rect) {
+    if (this.targetId && this._viewport) {
 
-        const midY = Math.floor(rect.height/2);
-        const midX = Math.floor(rect.width/2);
+      const clientWidth = this._viewport.canvas.clientWidth;
+      const clientHeight = this._viewport.canvas.clientHeight;
+      const rectangleHeight = 20;
 
-        this._viewport?.readPixels(rect, Pixel.Selector.All, (pixels) => {
-          let hit = false;
-          for (let y = midY - 10; y < midY + 10 && !hit; y++) {
-            for (let x = midX - 10; x < midX + 10 && !hit; x++) {
-              if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
-                hit = true;
-                console.warn("hit");
-              }
+      const topLeft = new Point2d(0, Math.floor(clientHeight/2-rectangleHeight/2));
+      const bottomRight = new Point2d(clientWidth, Math.floor(clientHeight/2+rectangleHeight/2));
+
+      const rectangle = new ViewRect();
+      rectangle.initFromPoints(topLeft, bottomRight);
+
+      this._viewport?.readPixels(rectangle, Pixel.Selector.All, (pixels) => {
+        let hit = false;
+        for (let y = topLeft.y; y <= bottomRight.y && !hit; y++) {
+          for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
+            if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
+              hit = true;
+              console.warn("hit");
             }
           }
-          if (!hit) {
-            console.warn("no hit");
-            this.stop();
-          }
-        }, true);
-      }
+        }
+        if (!hit) {
+          console.warn("no hit");
+          this.stop();
+        }
+      }, true);
     }
+
+  }
+
+  public toggleTarget(): void {
+    this._target = !this._target;
+    this._autoStop = !this._autoStop;
   }
 
   /**

@@ -39,6 +39,7 @@ export class DriveTool extends PrimitiveTool {
       case DriveToolProperties.speed.name: this._manager.speed = value / 3.6; break;
       case DriveToolProperties.fov.name: this._manager.fov = value; break;
       case DriveToolProperties.progress.name: this._manager.progress = value; break;
+      case DriveToolProperties.targetDistance.name: this._manager.targetDistance = value; break;
     }
     this.syncAllSettings();
     return true;
@@ -51,6 +52,7 @@ export class DriveTool extends PrimitiveTool {
     toolSettings.push({ value: {value: this._manager.speed * 3.6}, property: DriveToolProperties.speed, editorPosition: { rowPriority: 3, columnIndex: 1 }});
     toolSettings.push({ value: {value: this._manager.fov}, property: DriveToolProperties.fov, editorPosition: { rowPriority: 4, columnIndex: 1 }});
     toolSettings.push({ value: {value: this._manager.progress}, property: DriveToolProperties.progress, editorPosition: { rowPriority: 5, columnIndex: 1 }});
+    toolSettings.push({ value: {value: this._manager.targetDistance}, property: DriveToolProperties.targetDistance, editorPosition: { rowPriority: 6, columnIndex: 1 }});
     return toolSettings;
   }
 
@@ -61,6 +63,7 @@ export class DriveTool extends PrimitiveTool {
       { value: { value: this._manager.speed * 3.6}, propertyName: DriveToolProperties.speed.name },
       { value: { value: this._manager.fov}, propertyName: DriveToolProperties.fov.name },
       { value: { value: this._manager.progress}, propertyName: DriveToolProperties.progress.name },
+      { value: { value: this._manager.targetDistance}, propertyName: DriveToolProperties.targetDistance.name },
     ]);
   }
 
@@ -93,24 +96,27 @@ export class DriveTool extends PrimitiveTool {
     if (undefined === this._manager.targetId)
       this._manager.targetId = context.viewport.iModel.transientIds.next;
 
-    const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
-    builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
-    builder.addShape(this._manager.getPointsShape());
+    if (this._manager.target) {
+      const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
+      builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
+      builder.addShape(this._manager.getPointsShape());
 
-    context.addDecorationFromBuilder(builder);
+      context.addDecorationFromBuilder(builder);
+    }
   }
 
   protected provideToolAssistance(): void {
     const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
 
-    const toggleInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
+    const toggleMovementInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
     const reverseInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["R"]), "Reverse direction");
     const speedInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["W", "S"]), "Adjust speed");
     const heightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["Q", "E"]), "Adjust height");
     const lateralOffsetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["A", "D"]), "Adjust lateral offset");
+    const toggleTargetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["L"]), "Toggle target");
     const fovInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.MouseWheel, "Adjust Fov");
 
-    const section1 = ToolAssistance.createSection([toggleInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction]);
+    const section1 = ToolAssistance.createSection([toggleMovementInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction, toggleTargetInstruction]);
     const instructions = ToolAssistance.createInstructions(mainInstruction, [section1]);
     IModelApp.notifications.setToolAssistance(instructions);
   }
@@ -134,6 +140,9 @@ export class DriveTool extends PrimitiveTool {
           break;
         case "r":
           this._manager.reverseCurve();
+          break;
+        case "l":
+          this._manager.toggleTarget();
           break;
         case "w":
           this._keyIntervalId = setInterval(() => {
@@ -171,6 +180,7 @@ export class DriveTool extends PrimitiveTool {
             this.syncAllSettings();
           }, this._keyIntervalTime);
           break;
+
       }
     }
     return EventHandled.Yes;
