@@ -20,6 +20,6 @@ export class DetectionZoneDecoration implements CanvasDecoration {
 
   public drawDecoration(ctx: CanvasRenderingContext2D) {
     if (this.x && this.y && this.w && this.h)
-      ctx.rect(this.x, this.y, this.w, this.h);
+      ctx.strokeRect(this.x, this.y, this.w, this.h);
   }
 }

@@ -19,6 +19,7 @@ import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 import { DistanceUtils } from "./DistanceUtils";
 import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
+import { Point } from "@svgdotjs/svg.js";
 
 export class DriveToolManager {
 
@@ -54,9 +55,9 @@ export class DriveToolManager {
   private _intervalId?: NodeJS.Timeout;
 
   /** Indicates if target should be render */
-  private _target = true;
+  private _target = false;
   /** Indicates if simulation should stop when the target is no longer visible */
-  private _autoStop = true;
+  private _autoStop = false;
   private _targetDistance = DriveToolConfig.targetDistance;
   /** Id of the target */
   private _targetId?: string;
@@ -198,7 +199,8 @@ export class DriveToolManager {
 
     this._view = view;
 
-    // TODO: review behavior when size > 1
+    this.setDetectZonePoints();
+
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
       await this.setSelectedCurve(selectedElementId);
@@ -220,17 +222,20 @@ export class DriveToolManager {
     }
   }
 
+  public setDetectZonePoints(): void {
+    const topLeft = this.topLeftDetectionZone();
+    if (topLeft) {
+      this._detectionZoneDecoration.setRectangle(topLeft.x, topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight)
+    }
+  }
+
   public checkIfTargetVisible(): void {
     if (this.targetId && this._viewport) {
 
-      const corners = this.getCornersRectangle();
+      const topLeft = this.topLeftDetectionZone();
+      const bottomRight = this.bottomRightDetectionZone();
 
-      if (corners) {
-        const { topLeft, bottomRight } = corners
-
-        this._detectionZoneDecoration.setRectangle(topLeft.x, topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight)
-
-
+      if (topLeft && bottomRight) {
 
         const rectangle = new ViewRect();
         rectangle.initFromPoints(topLeft, bottomRight);
@@ -254,18 +259,28 @@ export class DriveToolManager {
     }
   }
 
-  private getCornersRectangle() {
+  private topLeftDetectionZone(): Point2d | undefined {
     if (!this._viewport)
-      return null;
+      return undefined;
 
     const clientWidth = this._viewport.canvas.clientWidth;
     const clientHeight = this._viewport.canvas.clientHeight;
     const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
 
     const halfSide = new Point2d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2);
-    const topLeft = clientCenter.minus(halfSide);
-    const bottomRight = clientCenter.plus(halfSide);
-    return { topLeft, bottomRight };
+    return clientCenter.minus(halfSide);
+  }
+
+  private bottomRightDetectionZone(): Point2d | undefined {
+    if (!this._viewport)
+      return undefined;
+
+    const clientWidth = this._viewport.canvas.clientWidth;
+    const clientHeight = this._viewport.canvas.clientHeight;
+    const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
+
+    const halfSide = new Point2d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2);
+    return clientCenter.plus(halfSide);
   }
 
   public toggleTarget(): void {
