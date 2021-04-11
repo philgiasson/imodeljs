@@ -21,13 +21,14 @@ import { ToolItemDef } from "@bentley/ui-framework";
 import { DriveToolProperties } from "./DriveToolProperties";
 import { ColorDef } from "@bentley/imodeljs-common";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
 
 export class DriveTool extends PrimitiveTool {
 
   public static toolId = "DriveTool";
   public static iconSpec = "icon-airplane";
 
-  private _manager = new DriveToolManager(new DistanceDisplayDecoration());
+  private _manager = new DriveToolManager(new DistanceDisplayDecoration(), new DetectionZoneDecoration());
   private _keyIntervalId?: NodeJS.Timeout;
   private _keyIntervalTime = 50;
 
@@ -47,23 +48,23 @@ export class DriveTool extends PrimitiveTool {
 
   public supplyToolSettingsProperties(): DialogItem[] | undefined {
     const toolSettings = new Array<DialogItem>();
-    toolSettings.push({ value: {value: this._manager.height}, property: DriveToolProperties.height, editorPosition: { rowPriority: 1, columnIndex: 1 }});
-    toolSettings.push({ value: {value: this._manager.lateralOffset}, property: DriveToolProperties.lateralOffset, editorPosition: { rowPriority: 2, columnIndex: 1 }});
-    toolSettings.push({ value: {value: this._manager.speed * 3.6}, property: DriveToolProperties.speed, editorPosition: { rowPriority: 3, columnIndex: 1 }});
-    toolSettings.push({ value: {value: this._manager.fov}, property: DriveToolProperties.fov, editorPosition: { rowPriority: 4, columnIndex: 1 }});
-    toolSettings.push({ value: {value: this._manager.progress}, property: DriveToolProperties.progress, editorPosition: { rowPriority: 5, columnIndex: 1 }});
-    toolSettings.push({ value: {value: this._manager.targetDistance}, property: DriveToolProperties.targetDistance, editorPosition: { rowPriority: 6, columnIndex: 1 }});
+    toolSettings.push({ value: { value: this._manager.height }, property: DriveToolProperties.height, editorPosition: { rowPriority: 1, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.lateralOffset }, property: DriveToolProperties.lateralOffset, editorPosition: { rowPriority: 2, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.speed * 3.6 }, property: DriveToolProperties.speed, editorPosition: { rowPriority: 3, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.fov }, property: DriveToolProperties.fov, editorPosition: { rowPriority: 4, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.progress }, property: DriveToolProperties.progress, editorPosition: { rowPriority: 5, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.targetDistance }, property: DriveToolProperties.targetDistance, editorPosition: { rowPriority: 6, columnIndex: 1 } });
     return toolSettings;
   }
 
   private syncAllSettings() {
     this.syncToolSettingsProperties([
-      { value: { value: this._manager.height}, propertyName: DriveToolProperties.height.name },
-      { value: { value: this._manager.lateralOffset}, propertyName: DriveToolProperties.lateralOffset.name },
-      { value: { value: this._manager.speed * 3.6}, propertyName: DriveToolProperties.speed.name },
-      { value: { value: this._manager.fov}, propertyName: DriveToolProperties.fov.name },
-      { value: { value: this._manager.progress}, propertyName: DriveToolProperties.progress.name },
-      { value: { value: this._manager.targetDistance}, propertyName: DriveToolProperties.targetDistance.name },
+      { value: { value: this._manager.height }, propertyName: DriveToolProperties.height.name },
+      { value: { value: this._manager.lateralOffset }, propertyName: DriveToolProperties.lateralOffset.name },
+      { value: { value: this._manager.speed * 3.6 }, propertyName: DriveToolProperties.speed.name },
+      { value: { value: this._manager.fov }, propertyName: DriveToolProperties.fov.name },
+      { value: { value: this._manager.progress }, propertyName: DriveToolProperties.progress.name },
+      { value: { value: this._manager.targetDistance }, propertyName: DriveToolProperties.targetDistance.name },
     ]);
   }
 
@@ -91,7 +92,7 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public decorate(context: DecorateContext): void {
-    context.addCanvasDecoration(this._manager.decoration);
+    context.addCanvasDecoration(this._manager.distanceDisplayDecoration);
 
     if (undefined === this._manager.targetId)
       this._manager.targetId = context.viewport.iModel.transientIds.next;
@@ -102,6 +103,8 @@ export class DriveTool extends PrimitiveTool {
       builder.addShape(this._manager.getPointsShape());
 
       context.addDecorationFromBuilder(builder);
+
+      context.addCanvasDecoration(this._manager.detectionZoneDecoration)
     }
   }
 

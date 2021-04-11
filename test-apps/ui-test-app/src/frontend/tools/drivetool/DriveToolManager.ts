@@ -13,11 +13,12 @@ import {
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
-import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "@bentley/geometry-core";
+import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d, XY } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 import { DistanceUtils } from "./DistanceUtils";
+import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
 
 export class DriveToolManager {
 
@@ -60,23 +61,27 @@ export class DriveToolManager {
   /** Id of the target */
   private _targetId?: string;
 
-  constructor(private _decoration: DistanceDisplayDecoration) {
+  constructor(private _distanceDisplayDecoration: DistanceDisplayDecoration, private _detectionZoneDecoration: DetectionZoneDecoration) {
   }
 
   public get target(): boolean {
     return this._target;
   }
 
-  public get targetId(): string|undefined {
+  public get targetId(): string | undefined {
     return this._targetId;
   }
 
-  public set targetId(id: string|undefined) {
+  public set targetId(id: string | undefined) {
     this._targetId = id;
   }
 
-  public get decoration(): DistanceDisplayDecoration {
-    return this._decoration;
+  public get distanceDisplayDecoration(): DistanceDisplayDecoration {
+    return this._distanceDisplayDecoration;
+  }
+
+  public get detectionZoneDecoration(): DetectionZoneDecoration {
+    return this._detectionZoneDecoration;
   }
 
   public get progress(): number {
@@ -171,10 +176,10 @@ export class DriveToolManager {
     const pos2 = position.plus(vectorLeft.scale(size / 2)).plus(vectorUp.scale(size / 4));
     const pos3 = pos2.plus(vectorUp.scale(size / 2));
     const pos4 = pos1.plus(vectorUp.scale(size));
-    const pos5 = pos4.plus(vectorRight.scale(size / 2));
-    const pos6 = pos3.plus(vectorRight.scale(size));
-    const pos7 = pos2.plus(vectorRight.scale(size));
-    const pos8 = position.plus(vectorRight.scale(size / 3));
+    const pos8 = position.plus(vectorRight.scale(size / 4));
+    const pos7 = position.plus(vectorRight.scale(size / 2)).plus(vectorUp.scale(size / 4));
+    const pos6 = pos7.plus(vectorUp.scale(size / 2));
+    const pos5 = pos8.plus(vectorUp.scale(size));
 
     return [pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8];
   }
@@ -218,33 +223,49 @@ export class DriveToolManager {
   public checkIfTargetVisible(): void {
     if (this.targetId && this._viewport) {
 
-      const clientWidth = this._viewport.canvas.clientWidth;
-      const clientHeight = this._viewport.canvas.clientHeight;
-      const rectangleHeight = 100;
+      const corners = this.getCornersRectangle();
 
-      const topLeft = new Point2d(0, Math.floor(clientHeight/2-rectangleHeight/2));
-      const bottomRight = new Point2d(clientWidth, Math.floor(clientHeight/2+rectangleHeight/2));
+      if (corners) {
+        const { topLeft, bottomRight } = corners
 
-      const rectangle = new ViewRect();
-      rectangle.initFromPoints(topLeft, bottomRight);
+        this._detectionZoneDecoration.setRectangle(topLeft.x, topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight)
 
-      this._viewport?.readPixels(rectangle, Pixel.Selector.All, (pixels) => {
-        let hit = false;
-        for (let y = topLeft.y; y <= bottomRight.y && !hit; y++) {
-          for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
-            if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
-              hit = true;
-              console.warn("hit");
+
+
+        const rectangle = new ViewRect();
+        rectangle.initFromPoints(topLeft, bottomRight);
+
+        this._viewport?.readPixels(rectangle, Pixel.Selector.All, (pixels) => {
+          let hit = false;
+          for (let y = topLeft.y; y <= bottomRight.y && !hit; y++) {
+            for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
+              if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
+                hit = true;
+                console.warn("hit");
+              }
             }
           }
-        }
-        if (!hit) {
-          console.warn("no hit");
-          this.stop();
-        }
-      }, true);
+          if (!hit) {
+            console.warn("no hit");
+            this.stop();
+          }
+        }, true);
+      }
     }
+  }
 
+  private getCornersRectangle() {
+    if (!this._viewport)
+      return null;
+
+    const clientWidth = this._viewport.canvas.clientWidth;
+    const clientHeight = this._viewport.canvas.clientHeight;
+    const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
+
+    const halfSide = new Point2d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2);
+    const topLeft = clientCenter.minus(halfSide);
+    const bottomRight = clientCenter.plus(halfSide);
+    return { topLeft, bottomRight };
   }
 
   public toggleTarget(): void {
@@ -307,11 +328,11 @@ export class DriveToolManager {
    * @param hit - Current hit at mouse position
    */
   public updateMouseDecoration(mousePosition: Point3d, hit: HitDetail | undefined): void {
-    this.decoration.mousePosition = mousePosition;
+    this.distanceDisplayDecoration.mousePosition = mousePosition;
     if (this._positionOnCurve && hit) {
-      this.decoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
+      this.distanceDisplayDecoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
     } else {
-      this.decoration.distance = 0;
+      this.distanceDisplayDecoration.distance = 0;
     }
   }
 

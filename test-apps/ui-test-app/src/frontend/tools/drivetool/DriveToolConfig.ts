@@ -27,6 +27,9 @@ export class DriveToolConfig {
   public static fovStep = 1;
   public static fovDefault = 75;
 
-  public static targetDistance = 50;
-  public static targetHeight = 4;
+  public static detectionRectangleWidth = 300;
+  public static detectionRectangleHeight = 100;
+
+  public static targetDistance = 200;
+  public static targetHeight = 3;
 }
