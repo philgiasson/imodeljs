@@ -153,17 +153,30 @@ export class DriveToolManager {
 
     const direction = position.minus(this._positionOnCurve);
     const vectorDirection = Vector3d.createFrom(direction).normalize();
-    const vectorUp = new Vector3d(0, 0, DriveToolConfig.targetHeight);
 
     if (!vectorDirection)
       return [new Point3d()];
 
-    const pos1 = position.plus(vectorUp.crossProduct(vectorDirection));
-    const pos2 = position.minus(vectorUp.crossProduct(vectorDirection));
-    const pos3 = pos2.plus(vectorUp);
-    const pos4 = pos1.plus(vectorUp);
+    return this.drawOctagonPoints(vectorDirection, position);
+  }
 
-    return [pos1, pos2, pos3, pos4];
+  private drawOctagonPoints(vectorDirection: Vector3d, position: Point3d) {
+    const size = DriveToolConfig.targetHeight;
+
+    const vectorUp = new Vector3d(0, 0, 1);
+    const vectorLeft = vectorUp.crossProduct(vectorDirection);
+    const vectorRight = vectorLeft.scale(-1);
+
+    const pos1 = position.plus(vectorLeft.scale(size / 4));
+    const pos2 = position.plus(vectorLeft.scale(size / 2)).plus(vectorUp.scale(size / 4));
+    const pos3 = pos2.plus(vectorUp.scale(size / 2));
+    const pos4 = pos1.plus(vectorUp.scale(size));
+    const pos5 = pos4.plus(vectorRight.scale(size / 2));
+    const pos6 = pos3.plus(vectorRight.scale(size));
+    const pos7 = pos2.plus(vectorRight.scale(size));
+    const pos8 = position.plus(vectorRight.scale(size / 3));
+
+    return [pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8];
   }
 
   /**
@@ -207,7 +220,7 @@ export class DriveToolManager {
 
       const clientWidth = this._viewport.canvas.clientWidth;
       const clientHeight = this._viewport.canvas.clientHeight;
-      const rectangleHeight = 20;
+      const rectangleHeight = 100;
 
       const topLeft = new Point2d(0, Math.floor(clientHeight/2-rectangleHeight/2));
       const bottomRight = new Point2d(clientWidth, Math.floor(clientHeight/2+rectangleHeight/2));

@@ -98,7 +98,7 @@ export class DriveTool extends PrimitiveTool {
 
     if (this._manager.target) {
       const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
-      builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red, 1);
+      builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red.withTransparency(128), 1);
       builder.addShape(this._manager.getPointsShape());
 
       context.addDecorationFromBuilder(builder);
