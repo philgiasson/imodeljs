@@ -253,6 +253,8 @@ export class DriveToolManager {
           if (!hit) {
             console.warn("no hit");
             this.stop();
+            const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Target not visible");
+            IModelApp.notifications.outputMessage(message);
           }
         }, true);
       }
