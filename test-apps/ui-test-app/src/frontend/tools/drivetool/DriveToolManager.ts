@@ -216,26 +216,29 @@ export class DriveToolManager {
       this.step();
       this._intervalId = setInterval(() => {
         this.step();
-        if (this._autoStop)
+        if (this._autoStop) {
+          this.setDetectZonePoints();
           this.checkIfTargetVisible();
+        }
       }, this._intervalTime * 1000);
     }
   }
 
   public setDetectZonePoints(): void {
-    const topLeft = this.topLeftDetectionZone();
-    if (topLeft) {
-      this._detectionZoneDecoration.setRectangle(topLeft.x, topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight)
+    const corners = this.getDetectionZoneCorners();
+    if (corners) {
+      const { topLeft, bottomRight } = corners;
+      this._detectionZoneDecoration.setRectangle(topLeft.x, topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight);
     }
   }
 
   public checkIfTargetVisible(): void {
     if (this.targetId && this._viewport) {
 
-      const topLeft = this.topLeftDetectionZone();
-      const bottomRight = this.bottomRightDetectionZone();
+      const corners = this.getDetectionZoneCorners();
 
-      if (topLeft && bottomRight) {
+      if (corners) {
+        const { topLeft, bottomRight } = corners;
 
         const rectangle = new ViewRect();
         rectangle.initFromPoints(topLeft, bottomRight);
@@ -261,28 +264,22 @@ export class DriveToolManager {
     }
   }
 
-  private topLeftDetectionZone(): Point2d | undefined {
-    if (!this._viewport)
+  private getDetectionZoneCorners() {
+    if (!this._viewport || !this._selectedCurve)
       return undefined;
 
-    const clientWidth = this._viewport.canvas.clientWidth;
-    const clientHeight = this._viewport.canvas.clientHeight;
-    const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
+    // const clientWidth = this._viewport.canvas.clientWidth;
+    // const clientHeight = this._viewport.canvas.clientHeight;
+    // const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
+    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
+    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
 
-    const halfSide = new Point2d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2);
-    return clientCenter.minus(halfSide);
-  }
+    const clientCenter = this._viewport.worldToView(position);
 
-  private bottomRightDetectionZone(): Point2d | undefined {
-    if (!this._viewport)
-      return undefined;
-
-    const clientWidth = this._viewport.canvas.clientWidth;
-    const clientHeight = this._viewport.canvas.clientHeight;
-    const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
-
-    const halfSide = new Point2d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2);
-    return clientCenter.plus(halfSide);
+    const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
+    const topLeft = clientCenter.minus(halfSide);
+    const bottomRight = clientCenter.plus(halfSide);
+    return { topLeft, bottomRight };
   }
 
   public toggleTarget(): void {
