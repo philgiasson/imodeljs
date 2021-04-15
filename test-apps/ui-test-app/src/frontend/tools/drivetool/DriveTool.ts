@@ -104,7 +104,7 @@ export class DriveTool extends PrimitiveTool {
 
       context.addDecorationFromBuilder(builder);
 
-      this._manager.setDetectZonePoints();
+      this._manager.updateDetectZonePoints();
       context.addCanvasDecoration(this._manager.detectionZoneDecoration)
     }
   }

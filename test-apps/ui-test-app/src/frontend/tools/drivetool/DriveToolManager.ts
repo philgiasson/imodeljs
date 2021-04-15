@@ -200,8 +200,6 @@ export class DriveToolManager {
 
     this._view = view;
 
-    this.setDetectZonePoints();
-
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
       await this.setSelectedCurve(selectedElementId);
@@ -224,7 +222,7 @@ export class DriveToolManager {
     }
   }
 
-  public setDetectZonePoints(): void {
+  public updateDetectZonePoints(): void {
     const corners = this.getDetectionZoneCorners();
     if (corners) {
       const { topLeft, bottomRight } = corners;
