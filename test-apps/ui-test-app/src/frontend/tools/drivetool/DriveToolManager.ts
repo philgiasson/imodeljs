@@ -9,6 +9,7 @@ import {
   OutputMessagePriority,
   Pixel,
   ScreenViewport,
+  Viewport,
   ViewRect,
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
@@ -217,7 +218,6 @@ export class DriveToolManager {
       this._intervalId = setInterval(() => {
         this.step();
         if (this._autoStop) {
-          this.setDetectZonePoints();
           this.checkIfTargetVisible();
         }
       }, this._intervalTime * 1000);
@@ -274,7 +274,8 @@ export class DriveToolManager {
     const fraction = this._targetDistance / this._selectedCurve?.curveLength();
     const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
 
-    const clientCenter = this._viewport.worldToView(position);
+    let clientCenter3d = this._viewport.worldToView(position);
+    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y))
 
     const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
     const topLeft = clientCenter.minus(halfSide);
