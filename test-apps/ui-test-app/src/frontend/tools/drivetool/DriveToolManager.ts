@@ -9,18 +9,16 @@ import {
   OutputMessagePriority,
   Pixel,
   ScreenViewport,
-  Viewport,
   ViewRect,
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
-import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d, XY } from "@bentley/geometry-core";
+import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d} from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 import { DistanceUtils } from "./DistanceUtils";
 import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
-import { Point } from "@svgdotjs/svg.js";
 
 export class DriveToolManager {
 
@@ -149,7 +147,7 @@ export class DriveToolManager {
   }
 
   /**
-   * calculate the position and the orientation with distance from position and of the target
+   * Calculate the position and the orientation with distance from position and of the target
    * @returns array of Point3d representing target shape
    */
   public getTargetPoints(): Point3d[] {
@@ -168,18 +166,16 @@ export class DriveToolManager {
     if (!vectorDirection)
       return [new Point3d()];
 
-    return this.drawOctagonPoints(vectorDirection, position);
+    return this.get2dOctagonPoints(vectorDirection, position, DriveToolConfig.targetHeight);
   }
 
   /**
-   * calculate points positions for a octagon shape
+   * Calculate points positions for a octagon 2d shape
    * @param vectorDirection vector perpendicular shape field
    * @param position of shape in world coordinate
    * @returns array of Point3d representing shape
    */
-  private drawOctagonPoints(vectorDirection: Vector3d, position: Point3d): Point3d[] {
-    const size = DriveToolConfig.targetHeight;
-
+  private get2dOctagonPoints(vectorDirection: Vector3d, position: Point3d, size: number): Point3d[] {
     const vectorUp = new Vector3d(0, 0, 1);
     const vectorLeft = vectorUp.crossProduct(vectorDirection);
     const vectorRight = vectorLeft.scale(-1);
@@ -232,7 +228,10 @@ export class DriveToolManager {
     }
   }
 
-  public updateDetectZonePoints(): void {
+  /**
+   * Update the shape of detection area decoration on the viewport
+   */
+  public updateDetectZoneDecorationPoints(): void {
     const corners = this.getDetectionZoneCorners();
     if (corners) {
       const { topLeft, bottomRight } = corners;
@@ -240,6 +239,9 @@ export class DriveToolManager {
     }
   }
 
+  /**
+   * Read all pixel in detection zone until the target is found, if not found stop the movement and display a error message
+   */
   public checkIfTargetVisible(): void {
     if (this.targetId && this._viewport) {
 
@@ -257,12 +259,10 @@ export class DriveToolManager {
             for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
               if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
                 hit = true;
-                console.warn("hit");
               }
             }
           }
           if (!hit) {
-            console.warn("no hit");
             this.stop();
             const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Target not visible");
             IModelApp.notifications.outputMessage(message);
@@ -272,18 +272,19 @@ export class DriveToolManager {
     }
   }
 
-  private getDetectionZoneCorners() {
+  /**
+   * Get the top left and bottom right corner of the detection zone
+   * @returns A list containing the Point2d of the top left corner and the bottom right corner of the
+   */
+  private getDetectionZoneCorners(): {topLeft: Point2d, bottomRight: Point2d}|undefined {
     if (!this._viewport || !this._selectedCurve)
       return undefined;
 
-    // const clientWidth = this._viewport.canvas.clientWidth;
-    // const clientHeight = this._viewport.canvas.clientHeight;
-    // const clientCenter = new Point2d(Math.floor(clientWidth / 2), Math.floor(clientHeight / 2));
     const fraction = this._targetDistance / this._selectedCurve?.curveLength();
     const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
 
-    let clientCenter3d = this._viewport.worldToView(position);
-    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y))
+    const clientCenter3d = this._viewport.worldToView(position);
+    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
 
     const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
     const topLeft = clientCenter.minus(halfSide);
@@ -291,6 +292,9 @@ export class DriveToolManager {
     return { topLeft, bottomRight };
   }
 
+  /**
+   * Toggles display of the target
+   */
   public toggleTarget(): void {
     this._target = !this._target;
     this._autoStop = !this._autoStop;
@@ -308,7 +312,7 @@ export class DriveToolManager {
   }
 
   /**
-   * Toggles the movement along the seelcted curve
+   * Toggles the movement along the selected curve
    */
   public toggleMovement(): void {
     this._moving ? this.stop() : this.launch();

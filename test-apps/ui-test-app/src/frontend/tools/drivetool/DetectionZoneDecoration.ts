@@ -4,14 +4,13 @@
 *--------------------------------------------------------------------------------------------*/
 import { CanvasDecoration } from "@bentley/imodeljs-frontend";
 
-
 export class DetectionZoneDecoration implements CanvasDecoration {
   public x?: number;
   public y?: number;
   public w?: number;
   public h?: number;
 
-  setRectangle(x: number, y: number, w: number, h: number) {
+  public setRectangle(x: number, y: number, w: number, h: number) {
     this.x = x;
     this.y = y;
     this.w = w;
