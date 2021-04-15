@@ -148,7 +148,11 @@ export class DriveToolManager {
     this._targetDistance = value;
   }
 
-  public getPointsShape(): Point3d[] {
+  /**
+   * calculate the position and the orientation with distance from position and of the target
+   * @returns array of Point3d representing target shape
+   */
+  public getTargetPoints(): Point3d[] {
     if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
 
@@ -167,7 +171,13 @@ export class DriveToolManager {
     return this.drawOctagonPoints(vectorDirection, position);
   }
 
-  private drawOctagonPoints(vectorDirection: Vector3d, position: Point3d) {
+  /**
+   * calculate points positions for a octagon shape
+   * @param vectorDirection vector perpendicular shape field
+   * @param position of shape in world coordinate
+   * @returns array of Point3d representing shape
+   */
+  private drawOctagonPoints(vectorDirection: Vector3d, position: Point3d): Point3d[] {
     const size = DriveToolConfig.targetHeight;
 
     const vectorUp = new Vector3d(0, 0, 1);
