@@ -271,6 +271,11 @@ export class DriveToolManager {
     return { topLeft, bottomRight };
   }
 
+  /**
+   * Get point on curve at distance from current position on curve
+   * @param distance
+   * @private
+   */
   private getPositionAtDistance(distance: number): Point3d | undefined {
     if (!this._selectedCurve)
       return undefined;
