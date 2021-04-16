@@ -6,11 +6,13 @@ import { DriveToolManager } from '../src/frontend/tools/drivetool/DriveToolManag
 import { expect } from 'chai';
 import { DistanceDisplayDecoration } from '../src/frontend/tools/drivetool/DistanceDisplayDecoration';
 import { DriveToolConfig } from '../src/frontend/tools/drivetool/DriveToolConfig';
+import { DetectionZoneDecoration } from '../src/frontend/tools/drivetool/DetectionZoneDecoration';
 
 describe('DriveToolManager', function() {
 
-  const decoration = new DistanceDisplayDecoration()
-  const manager = new DriveToolManager(decoration);
+  const distanceDecoration = new DistanceDisplayDecoration();
+  const detectionZoneDecoration = new DetectionZoneDecoration();
+  const manager = new DriveToolManager(distanceDecoration, detectionZoneDecoration);
 
   describe('Constructor', function() {
     it('should return instance', function() {
