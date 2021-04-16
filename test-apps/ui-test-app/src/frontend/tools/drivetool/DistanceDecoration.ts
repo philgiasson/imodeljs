@@ -2,11 +2,11 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { CanvasDecoration, DecorateContext, IModelApp, QuantityType } from "@bentley/imodeljs-frontend";
+import { CanvasDecoration, IModelApp, QuantityType } from "@bentley/imodeljs-frontend";
 import { Point3d } from "@bentley/geometry-core";
 import { FormatterSpec } from "@bentley/imodeljs-quantity";
 
-export class DistanceDisplayDecoration implements CanvasDecoration {
+export class DistanceDecoration implements CanvasDecoration {
 
   public mousePosition = Point3d.createZero();
   public distance = 0;

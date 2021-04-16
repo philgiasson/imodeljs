@@ -20,7 +20,7 @@ import { DialogItem, DialogPropertySyncItem } from "@bentley/ui-abstract";
 import { ToolItemDef } from "@bentley/ui-framework";
 import { DriveToolProperties } from "./DriveToolProperties";
 import { ColorDef } from "@bentley/imodeljs-common";
-import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+import { DistanceDecoration } from "./DistanceDecoration";
 import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
 
 export class DriveTool extends PrimitiveTool {
@@ -28,7 +28,7 @@ export class DriveTool extends PrimitiveTool {
   public static toolId = "DriveTool";
   public static iconSpec = "icon-airplane";
 
-  private _manager = new DriveToolManager(new DistanceDisplayDecoration(), new DetectionZoneDecoration());
+  private _manager = new DriveToolManager(new DistanceDecoration(), new DetectionZoneDecoration());
   private _keyIntervalId?: NodeJS.Timeout;
   private _keyIntervalTime = 50;
 
@@ -92,12 +92,12 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public decorate(context: DecorateContext): void {
-    context.addCanvasDecoration(this._manager.distanceDisplayDecoration);
+    context.addCanvasDecoration(this._manager.distanceDecoration);
 
     if (undefined === this._manager.targetId)
       this._manager.targetId = context.viewport.iModel.transientIds.next;
 
-    if (this._manager.target) {
+    if (this._manager.targetEnabled) {
       const builder = context.createGraphicBuilder(GraphicType.WorldDecoration, undefined, this.manager.targetId);
       builder.setSymbology(context.viewport.getContrastToBackgroundColor(), ColorDef.red.withTransparency(128), 5);
       builder.addShape(this._manager.getTargetPoints());

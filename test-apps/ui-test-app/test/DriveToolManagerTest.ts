@@ -4,13 +4,13 @@
 *--------------------------------------------------------------------------------------------*/
 import { DriveToolManager } from '../src/frontend/tools/drivetool/DriveToolManager';
 import { expect } from 'chai';
-import { DistanceDisplayDecoration } from '../src/frontend/tools/drivetool/DistanceDisplayDecoration';
+import { DistanceDecoration } from '../src/frontend/tools/drivetool/DistanceDecoration';
 import { DriveToolConfig } from '../src/frontend/tools/drivetool/DriveToolConfig';
 import { DetectionZoneDecoration } from '../src/frontend/tools/drivetool/DetectionZoneDecoration';
 
 describe('DriveToolManager', function() {
 
-  const distanceDecoration = new DistanceDisplayDecoration();
+  const distanceDecoration = new DistanceDecoration();
   const detectionZoneDecoration = new DetectionZoneDecoration();
   const manager = new DriveToolManager(distanceDecoration, detectionZoneDecoration);
 

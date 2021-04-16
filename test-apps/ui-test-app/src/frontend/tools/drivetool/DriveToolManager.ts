@@ -16,7 +16,7 @@ import { Easing } from "@bentley/imodeljs-common";
 import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
-import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
+import { DistanceDecoration } from "./DistanceDecoration";
 import { DistanceUtils } from "./DistanceUtils";
 import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
 
@@ -54,18 +54,19 @@ export class DriveToolManager {
   private _intervalId?: NodeJS.Timeout;
 
   /** Indicates if target should be render */
-  private _target = false;
+  private _targetEnabled = false;
   /** Indicates if simulation should stop when the target is no longer visible */
-  private _autoStop = false;
+  private _autoStopEnabled = false;
   private _targetDistance = DriveToolConfig.targetDistance;
   /** Id of the target */
   private _targetId?: string;
 
-  constructor(private _distanceDisplayDecoration: DistanceDisplayDecoration, private _detectionZoneDecoration: DetectionZoneDecoration) {
+  constructor(private _distanceDecoration: DistanceDecoration,
+              private _detectionZoneDecoration: DetectionZoneDecoration) {
   }
 
-  public get target(): boolean {
-    return this._target;
+  public get targetEnabled(): boolean {
+    return this._targetEnabled;
   }
 
   public get targetId(): string | undefined {
@@ -76,8 +77,8 @@ export class DriveToolManager {
     this._targetId = id;
   }
 
-  public get distanceDisplayDecoration(): DistanceDisplayDecoration {
-    return this._distanceDisplayDecoration;
+  public get distanceDecoration(): DistanceDecoration {
+    return this._distanceDecoration;
   }
 
   public get detectionZoneDecoration(): DetectionZoneDecoration {
@@ -221,7 +222,7 @@ export class DriveToolManager {
       this.step();
       this._intervalId = setInterval(() => {
         this.step();
-        if (this._autoStop) {
+        if (this._autoStopEnabled) {
           this.checkIfTargetVisible();
         }
       }, this._intervalTime * 1000);
@@ -295,8 +296,8 @@ export class DriveToolManager {
    * Toggles display of the target
    */
   public toggleTarget(): void {
-    this._target = !this._target;
-    this._autoStop = !this._autoStop;
+    this._targetEnabled = !this._targetEnabled;
+    this._autoStopEnabled = !this._autoStopEnabled;
   }
 
   /**
@@ -354,11 +355,11 @@ export class DriveToolManager {
    * @param hit - Current hit at mouse position
    */
   public updateMouseDecoration(mousePosition: Point3d, hit: HitDetail | undefined): void {
-    this.distanceDisplayDecoration.mousePosition = mousePosition;
+    this.distanceDecoration.mousePosition = mousePosition;
     if (this._positionOnCurve && hit) {
-      this.distanceDisplayDecoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
+      this.distanceDecoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
     } else {
-      this.distanceDisplayDecoration.distance = 0;
+      this.distanceDecoration.distance = 0;
     }
   }
 
