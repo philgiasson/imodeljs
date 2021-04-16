@@ -18,6 +18,7 @@ import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRp
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
 import { DistanceUtils } from "./DistanceUtils";
+import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
 
 export class DriveToolManager {
 
@@ -53,30 +54,34 @@ export class DriveToolManager {
   private _intervalId?: NodeJS.Timeout;
 
   /** Indicates if target should be render */
-  private _target = true;
+  private _target = false;
   /** Indicates if simulation should stop when the target is no longer visible */
-  private _autoStop = true;
+  private _autoStop = false;
   private _targetDistance = DriveToolConfig.targetDistance;
   /** Id of the target */
   private _targetId?: string;
 
-  constructor(private _decoration: DistanceDisplayDecoration) {
+  constructor(private _distanceDisplayDecoration: DistanceDisplayDecoration, private _detectionZoneDecoration: DetectionZoneDecoration) {
   }
 
   public get target(): boolean {
     return this._target;
   }
 
-  public get targetId(): string|undefined {
+  public get targetId(): string | undefined {
     return this._targetId;
   }
 
-  public set targetId(id: string|undefined) {
+  public set targetId(id: string | undefined) {
     this._targetId = id;
   }
 
-  public get decoration(): DistanceDisplayDecoration {
-    return this._decoration;
+  public get distanceDisplayDecoration(): DistanceDisplayDecoration {
+    return this._distanceDisplayDecoration;
+  }
+
+  public get detectionZoneDecoration(): DetectionZoneDecoration {
+    return this._detectionZoneDecoration;
   }
 
   public get progress(): number {
@@ -141,7 +146,11 @@ export class DriveToolManager {
     this._targetDistance = value;
   }
 
-  public getPointsShape(): Point3d[] {
+  /**
+   * Calculate the position and the orientation with distance from position and of the target
+   * @returns array of Point3d representing target shape
+   */
+  public getTargetPoints(): Point3d[] {
     if (!this._selectedCurve || !this._positionOnCurve)
       return [new Point3d()];
 
@@ -153,17 +162,34 @@ export class DriveToolManager {
 
     const direction = position.minus(this._positionOnCurve);
     const vectorDirection = Vector3d.createFrom(direction).normalize();
-    const vectorUp = new Vector3d(0, 0, DriveToolConfig.targetHeight);
 
     if (!vectorDirection)
       return [new Point3d()];
 
-    const pos1 = position.plus(vectorUp.crossProduct(vectorDirection));
-    const pos2 = position.minus(vectorUp.crossProduct(vectorDirection));
-    const pos3 = pos2.plus(vectorUp);
-    const pos4 = pos1.plus(vectorUp);
+    return this.get2dOctagonPoints(vectorDirection, position, DriveToolConfig.targetHeight);
+  }
 
-    return [pos1, pos2, pos3, pos4];
+  /**
+   * Calculate points positions for a octagon 2d shape
+   * @param vectorDirection vector perpendicular shape field
+   * @param position of shape in world coordinate
+   * @returns array of Point3d representing shape
+   */
+  private get2dOctagonPoints(vectorDirection: Vector3d, position: Point3d, size: number): Point3d[] {
+    const vectorUp = new Vector3d(0, 0, 1);
+    const vectorLeft = vectorUp.crossProduct(vectorDirection);
+    const vectorRight = vectorLeft.scale(-1);
+
+    const pos1 = position.plus(vectorLeft.scale(size / 4));
+    const pos2 = position.plus(vectorLeft.scale(size / 2)).plus(vectorUp.scale(size / 4));
+    const pos3 = pos2.plus(vectorUp.scale(size / 2));
+    const pos4 = pos1.plus(vectorUp.scale(size));
+    const pos8 = position.plus(vectorRight.scale(size / 4));
+    const pos7 = position.plus(vectorRight.scale(size / 2)).plus(vectorUp.scale(size / 4));
+    const pos6 = pos7.plus(vectorUp.scale(size / 2));
+    const pos5 = pos8.plus(vectorUp.scale(size));
+
+    return [pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8];
   }
 
   /**
@@ -180,7 +206,6 @@ export class DriveToolManager {
 
     this._view = view;
 
-    // TODO: review behavior when size > 1
     if (view.iModel.selectionSet.size === 1) {
       const selectedElementId = view.iModel.selectionSet.elements.values().next().value;
       await this.setSelectedCurve(selectedElementId);
@@ -196,44 +221,79 @@ export class DriveToolManager {
       this.step();
       this._intervalId = setInterval(() => {
         this.step();
-        if (this._autoStop)
+        if (this._autoStop) {
           this.checkIfTargetVisible();
+        }
       }, this._intervalTime * 1000);
     }
   }
 
+  /**
+   * Update the shape of detection area decoration on the viewport
+   */
+  public updateDetectZoneDecorationPoints(): void {
+    const corners = this.getDetectionZoneCorners();
+    if (corners) {
+      this._detectionZoneDecoration.setRectangle(corners.topLeft.x, corners.topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight);
+    }
+  }
+
+  /**
+   * Read all pixel in detection zone until the target is found, if not found stop the movement and display a error message
+   */
   public checkIfTargetVisible(): void {
     if (this.targetId && this._viewport) {
 
-      const clientWidth = this._viewport.canvas.clientWidth;
-      const clientHeight = this._viewport.canvas.clientHeight;
-      const rectangleHeight = 20;
+      const corners = this.getDetectionZoneCorners();
 
-      const topLeft = new Point2d(0, Math.floor(clientHeight/2-rectangleHeight/2));
-      const bottomRight = new Point2d(clientWidth, Math.floor(clientHeight/2+rectangleHeight/2));
+      if (corners) {
+        const { topLeft, bottomRight } = corners;
 
-      const rectangle = new ViewRect();
-      rectangle.initFromPoints(topLeft, bottomRight);
+        const rectangle = new ViewRect();
+        rectangle.initFromPoints(topLeft, bottomRight);
 
-      this._viewport?.readPixels(rectangle, Pixel.Selector.All, (pixels) => {
-        let hit = false;
-        for (let y = topLeft.y; y <= bottomRight.y && !hit; y++) {
-          for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
-            if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
-              hit = true;
-              console.warn("hit");
+        this._viewport?.readPixels(rectangle, Pixel.Selector.All, (pixels) => {
+          let hit = false;
+          for (let y = topLeft.y; y <= bottomRight.y && !hit; y++) {
+            for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
+              if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
+                hit = true;
+              }
             }
           }
-        }
-        if (!hit) {
-          console.warn("no hit");
-          this.stop();
-        }
-      }, true);
+          if (!hit) {
+            this.stop();
+            const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Target not visible");
+            IModelApp.notifications.outputMessage(message);
+          }
+        }, true);
+      }
     }
-
   }
 
+  /**
+   * Get the top left and bottom right corner of the detection zone
+   * @returns A object containing the Point2d of the top left corner and the bottom right corner of the
+   */
+  private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
+    if (!this._viewport || !this._selectedCurve)
+      return undefined;
+
+    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
+    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
+
+    const clientCenter3d = this._viewport.worldToView(position);
+    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
+
+    const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
+    const topLeft = clientCenter.minus(halfSide);
+    const bottomRight = clientCenter.plus(halfSide);
+    return { topLeft, bottomRight };
+  }
+
+  /**
+   * Toggles display of the target
+   */
   public toggleTarget(): void {
     this._target = !this._target;
     this._autoStop = !this._autoStop;
@@ -251,7 +311,7 @@ export class DriveToolManager {
   }
 
   /**
-   * Toggles the movement along the seelcted curve
+   * Toggles the movement along the selected curve
    */
   public toggleMovement(): void {
     this._moving ? this.stop() : this.launch();
@@ -294,11 +354,11 @@ export class DriveToolManager {
    * @param hit - Current hit at mouse position
    */
   public updateMouseDecoration(mousePosition: Point3d, hit: HitDetail | undefined): void {
-    this.decoration.mousePosition = mousePosition;
+    this.distanceDisplayDecoration.mousePosition = mousePosition;
     if (this._positionOnCurve && hit) {
-      this.decoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
+      this.distanceDisplayDecoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
     } else {
-      this.decoration.distance = 0;
+      this.distanceDisplayDecoration.distance = 0;
     }
   }
 
