@@ -201,7 +201,11 @@ export class DriveToolManager {
       this._intervalId = setInterval(() => {
         this.step();
         if (this._autoStopEnabled) {
-          this.checkIfTargetVisible();
+          if (!this.isTargetVisible()) {
+            this.stop();
+            const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Target not visible");
+            IModelApp.notifications.outputMessage(message);
+          }
         }
       }, this._intervalTime * 1000);
     }
@@ -218,9 +222,10 @@ export class DriveToolManager {
   }
 
   /**
-   * Read all pixel in detection zone until the target is found, if not found stop the movement and display a error message
+   * Read all pixel in detection zone until the target is found.
    */
-  public checkIfTargetVisible(): void {
+  public isTargetVisible(): boolean {
+    let hit = false;
     if (this.targetId && this._viewport) {
 
       const corners = this.getDetectionZoneCorners();
@@ -232,7 +237,6 @@ export class DriveToolManager {
         rectangle.initFromPoints(topLeft, bottomRight);
 
         this._viewport?.readPixels(rectangle, Pixel.Selector.All, (pixels) => {
-          let hit = false;
           for (let y = topLeft.y; y <= bottomRight.y && !hit; y++) {
             for (let x = topLeft.x; x <= bottomRight.x && !hit; x++) {
               if (pixels?.getPixel(x, y)?.elementId === this._targetId) {
@@ -240,14 +244,10 @@ export class DriveToolManager {
               }
             }
           }
-          if (!hit) {
-            this.stop();
-            const message = new NotifyMessageDetails(OutputMessagePriority.Warning, "Target not visible");
-            IModelApp.notifications.outputMessage(message);
-          }
         }, true);
       }
     }
+    return hit;
   }
 
   /**
