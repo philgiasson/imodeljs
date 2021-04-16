@@ -149,29 +149,6 @@ export class DriveToolManager {
   }
 
   /**
-   * Calculate the position and the orientation with distance from position and of the target
-   * @returns array of Point3d representing target shape
-   */
-  public getTargetPoints(): Point3d[] {
-    if (!this._selectedCurve || !this._positionOnCurve)
-      return [new Point3d()];
-
-    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
-    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
-
-    if (!position)
-      return [new Point3d()];
-
-    const direction = position.minus(this._positionOnCurve);
-    const vectorDirection = Vector3d.createFrom(direction).normalize();
-
-    if (!vectorDirection)
-      return [new Point3d()];
-
-    return ShapeUtils.get2dOctagonPoints(vectorDirection, position, DriveToolConfig.targetHeight);
-  }
-
-  /**
    *  Sets the current viewport and view state. If an element is selected, sets it as selected curve.
    */
   public async init(): Promise<void> {
@@ -251,15 +228,39 @@ export class DriveToolManager {
   }
 
   /**
+   * Calculate the position and the orientation with distance from position and of the target
+   * @returns array of Point3d representing target shape
+   */
+  public getTargetPoints(): Point3d[] {
+    if (!this._positionOnCurve)
+      return [new Point3d()];
+
+    const position = this.getPositionAtDistance(this._targetDistance);
+
+    if (!position)
+      return [new Point3d()];
+
+    const direction = position.minus(this._positionOnCurve);
+    const vectorDirection = Vector3d.createFrom(direction).normalize();
+
+    if (!vectorDirection)
+      return [new Point3d()];
+
+    return ShapeUtils.get2dOctagonPoints(vectorDirection, position, DriveToolConfig.targetHeight);
+  }
+
+  /**
    * Get the top left and bottom right corner of the detection zone
    * @returns A object containing the Point2d of the top left corner and the bottom right corner of the
    */
   private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
-    if (!this._viewport || !this._selectedCurve)
+    if (!this._viewport)
       return undefined;
 
-    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
-    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
+    const position = this.getPositionAtDistance(this._targetDistance);
+
+    if (!position)
+      return undefined;
 
     const clientCenter3d = this._viewport.worldToView(position);
     const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
@@ -268,6 +269,14 @@ export class DriveToolManager {
     const topLeft = clientCenter.minus(halfSide);
     const bottomRight = clientCenter.plus(halfSide);
     return { topLeft, bottomRight };
+  }
+
+  private getPositionAtDistance(distance: number): Point3d | undefined {
+    if (!this._selectedCurve)
+      return undefined;
+
+    const fraction = distance / this._selectedCurve.curveLength();
+    return this._selectedCurve.fractionToPoint(this._progress + fraction);
   }
 
   /**
