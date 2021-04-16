@@ -13,7 +13,7 @@ import {
   ViewState3d,
 } from "@bentley/imodeljs-frontend";
 import { Easing } from "@bentley/imodeljs-common";
-import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d} from "@bentley/geometry-core";
+import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "@bentley/geometry-core";
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDisplayDecoration } from "./DistanceDisplayDecoration";
@@ -234,8 +234,7 @@ export class DriveToolManager {
   public updateDetectZoneDecorationPoints(): void {
     const corners = this.getDetectionZoneCorners();
     if (corners) {
-      const { topLeft, bottomRight } = corners;
-      this._detectionZoneDecoration.setRectangle(topLeft.x, topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight);
+      this._detectionZoneDecoration.setRectangle(corners.topLeft.x, corners.topLeft.y, DriveToolConfig.detectionRectangleWidth, DriveToolConfig.detectionRectangleHeight);
     }
   }
 
@@ -274,9 +273,9 @@ export class DriveToolManager {
 
   /**
    * Get the top left and bottom right corner of the detection zone
-   * @returns A list containing the Point2d of the top left corner and the bottom right corner of the
+   * @returns A object containing the Point2d of the top left corner and the bottom right corner of the
    */
-  private getDetectionZoneCorners(): {topLeft: Point2d, bottomRight: Point2d}|undefined {
+  private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
     if (!this._viewport || !this._selectedCurve)
       return undefined;
 
