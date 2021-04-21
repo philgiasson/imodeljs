@@ -6,6 +6,9 @@ import { CanvasDecoration, IModelApp, QuantityType } from "@bentley/imodeljs-fro
 import { Point3d } from "@bentley/geometry-core";
 import { FormatterSpec } from "@bentley/imodeljs-quantity";
 
+/**
+ * Decoration that displays a formatted distance beside the cursor
+ */
 export class DistanceDecoration implements CanvasDecoration {
 
   public mousePosition = Point3d.createZero();
@@ -36,7 +39,7 @@ export class DistanceDecoration implements CanvasDecoration {
       ctx.textBaseline = "middle";
       ctx.font = "14px sans-serif";
       ctx.fillStyle = "white";
-      let formattedDistance = "placeholder";
+      let formattedDistance = "";
       if (this._formatter) {
         formattedDistance = IModelApp.quantityFormatter.formatQuantity(this.distance, this._formatter);
       }

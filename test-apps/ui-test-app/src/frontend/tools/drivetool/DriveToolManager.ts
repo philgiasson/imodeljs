@@ -17,8 +17,7 @@ import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDecoration } from "./DistanceDecoration";
-import { DistanceUtils } from "./DistanceUtils";
-import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
+import { RectangleDecoration } from "./RectangleDecoration";
 import { ShapeUtils } from './ShapeUtils';
 
 export class DriveToolManager {
@@ -54,16 +53,17 @@ export class DriveToolManager {
   /** Id of the current movement interval */
   private _intervalId?: NodeJS.Timeout;
 
-  /** Indicates if target should be render */
+  /** Indicates if target should render */
   private _targetEnabled = false;
   /** Indicates if simulation should stop when the target is no longer visible */
   private _autoStopEnabled = false;
-  private _targetDistance = DriveToolConfig.targetDistance;
+  /** Distance of target from current position on curve */
+  private _targetDistance = DriveToolConfig.targetDistanceDefault;
   /** Id of the target */
   private _targetId?: string;
 
   constructor(private _distanceDecoration: DistanceDecoration,
-              private _detectionZoneDecoration: DetectionZoneDecoration) {
+              private _detectionZoneDecoration: RectangleDecoration) {
   }
 
   public get targetEnabled(): boolean {
@@ -82,7 +82,7 @@ export class DriveToolManager {
     return this._distanceDecoration;
   }
 
-  public get detectionZoneDecoration(): DetectionZoneDecoration {
+  public get detectionZoneDecoration(): RectangleDecoration {
     return this._detectionZoneDecoration;
   }
 
