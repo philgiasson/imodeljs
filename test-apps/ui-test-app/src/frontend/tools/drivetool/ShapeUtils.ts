@@ -8,14 +8,14 @@ export class ShapeUtils {
 
   /**
    * Calculate points positions for a octagon 2d shape
-   * @param vectorDirection vector perpendicular shape field
+   * @param direction vector perpendicular shape field
    * @param position of shape in world coordinates
    * @param size of octagon
    * @returns array of Point3d representing shape
    */
-  public static get2dOctagonPoints(vectorDirection: Vector3d, position: Point3d, size: number): Point3d[] {
+  public static getOctagonPoints(position: Point3d, direction: Vector3d, size: number): Point3d[] {
     const vectorUp = new Vector3d(0, 0, 1);
-    const vectorLeft = vectorUp.crossProduct(vectorDirection);
+    const vectorLeft = vectorUp.crossProduct(direction);
     const vectorRight = vectorLeft.scale(-1);
 
     const pos1 = position.plus(vectorLeft.scale(size / 4));

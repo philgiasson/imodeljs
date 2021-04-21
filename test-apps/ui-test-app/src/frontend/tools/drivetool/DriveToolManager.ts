@@ -246,7 +246,7 @@ export class DriveToolManager {
     if (!vectorDirection)
       return [new Point3d()];
 
-    return ShapeUtils.get2dOctagonPoints(vectorDirection, position, DriveToolConfig.targetHeight);
+    return ShapeUtils.getOctagonPoints(position, vectorDirection, DriveToolConfig.targetHeight);
   }
 
   /**
