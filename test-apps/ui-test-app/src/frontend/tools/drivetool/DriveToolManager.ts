@@ -349,7 +349,7 @@ export class DriveToolManager {
   public updateMouseDecoration(mousePosition: Point3d, hit: HitDetail | undefined): void {
     this.distanceDecoration.mousePosition = mousePosition;
     if (this._positionOnCurve && hit) {
-      this.distanceDecoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
+      this.distanceDecoration.distance = this._positionOnCurve.distance(hit.getPoint());
     } else {
       this.distanceDecoration.distance = 0;
     }
