@@ -22,6 +22,7 @@ import { DriveToolProperties } from "./DriveToolProperties";
 import { ColorDef } from "@bentley/imodeljs-common";
 import { DistanceDecoration } from "./DistanceDecoration";
 import { RectangleDecoration } from "./RectangleDecoration";
+import { DriveToolInputManager } from "./DriveToolInputManager";
 
 export class DriveTool extends PrimitiveTool {
 
@@ -29,8 +30,23 @@ export class DriveTool extends PrimitiveTool {
   public static iconSpec = "icon-airplane";
 
   private _manager = new DriveToolManager(new DistanceDecoration(), new RectangleDecoration());
-  private _keyIntervalId?: NodeJS.Timeout;
-  private _keyIntervalTime = 50;
+  private _inputManager = new DriveToolInputManager(this._manager);
+
+  public static get driveToolItemDef() {
+    return new ToolItemDef({
+      toolId: DriveTool.toolId,
+      iconSpec: DriveTool.iconSpec,
+      label: () => "Drive Tool",
+      description: () => "Drive Tool Desc",
+      execute: () => {
+        IModelApp.tools.run(DriveTool.toolId);
+      },
+    });
+  }
+
+  public get manager() {
+    return this._manager;
+  }
 
   public applyToolSettingPropertyChange(updatedValue: DialogPropertySyncItem): boolean {
     const value = updatedValue.value.value as number;
@@ -57,21 +73,6 @@ export class DriveTool extends PrimitiveTool {
     return toolSettings;
   }
 
-  private syncAllSettings() {
-    this.syncToolSettingsProperties([
-      { value: { value: this._manager.height }, propertyName: DriveToolProperties.height.name },
-      { value: { value: this._manager.lateralOffset }, propertyName: DriveToolProperties.lateralOffset.name },
-      { value: { value: this._manager.speed * 3.6 }, propertyName: DriveToolProperties.speed.name },
-      { value: { value: this._manager.fov }, propertyName: DriveToolProperties.fov.name },
-      { value: { value: this._manager.progress }, propertyName: DriveToolProperties.progress.name },
-      { value: { value: this._manager.targetDistance }, propertyName: DriveToolProperties.targetDistance.name },
-    ]);
-  }
-
-  public get manager() {
-    return this._manager;
-  }
-
   public requireWriteableTarget(): boolean {
     return false;
   }
@@ -84,10 +85,6 @@ export class DriveTool extends PrimitiveTool {
   }
 
   public onUnsuspend(): void {
-    this.provideToolAssistance();
-  }
-
-  protected setupAndPromptForNextAction(): void {
     this.provideToolAssistance();
   }
 
@@ -107,6 +104,10 @@ export class DriveTool extends PrimitiveTool {
       this._manager.updateDetectZoneDecorationPoints();
       context.addCanvasDecoration(this._manager.detectionZoneDecoration);
     }
+  }
+
+  protected setupAndPromptForNextAction(): void {
+    this.provideToolAssistance();
   }
 
   protected provideToolAssistance(): void {
@@ -133,60 +134,8 @@ export class DriveTool extends PrimitiveTool {
     return EventHandled.Yes;
   }
 
-  public async onKeyTransition(_wentDown: boolean, _keyEvent: KeyboardEvent): Promise<EventHandled> {
-    if (this._keyIntervalId) {
-      clearTimeout(this._keyIntervalId);
-    }
-    if (_wentDown) {
-      switch (_keyEvent.key) {
-        case "t":
-          this._manager.toggleMovement();
-          break;
-        case "r":
-          this._manager.reverseCurve();
-          break;
-        case "l":
-          this._manager.toggleTarget();
-          break;
-        case "w":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.speed += DriveToolConfig.speedStep;
-            this.syncAllSettings();
-          }, this._keyIntervalTime);
-          break;
-        case "s":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.speed -= DriveToolConfig.speedStep;
-            this.syncAllSettings();
-          }, this._keyIntervalTime);
-          break;
-        case "a":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.lateralOffset -= DriveToolConfig.lateralOffsetStep;
-            this.syncAllSettings();
-          }, this._keyIntervalTime);
-          break;
-        case "d":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.lateralOffset += DriveToolConfig.lateralOffsetStep;
-            this.syncAllSettings();
-          }, this._keyIntervalTime);
-          break;
-        case "q":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.height -= DriveToolConfig.heightStep;
-            this.syncAllSettings();
-          }, this._keyIntervalTime);
-          break;
-        case "e":
-          this._keyIntervalId = setInterval(() => {
-            this._manager.height += DriveToolConfig.heightStep;
-            this.syncAllSettings();
-          }, this._keyIntervalTime);
-          break;
-
-      }
-    }
+  public async onKeyTransition(wentDown: boolean, keyEvent: KeyboardEvent): Promise<EventHandled> {
+    this._inputManager.handleKeyTransition(wentDown, keyEvent.key, () => {this.syncAllSettings()});
     return EventHandled.Yes;
   }
 
@@ -223,15 +172,14 @@ export class DriveTool extends PrimitiveTool {
       this.exitTool();
   }
 
-  public static get driveToolItemDef() {
-    return new ToolItemDef({
-      toolId: DriveTool.toolId,
-      iconSpec: DriveTool.iconSpec,
-      label: () => "Drive Tool",
-      description: () => "Drive Tool Desc",
-      execute: () => {
-        IModelApp.tools.run(DriveTool.toolId);
-      },
-    });
+  private syncAllSettings() {
+    this.syncToolSettingsProperties([
+      { value: { value: this._manager.height }, propertyName: DriveToolProperties.height.name },
+      { value: { value: this._manager.lateralOffset }, propertyName: DriveToolProperties.lateralOffset.name },
+      { value: { value: this._manager.speed * 3.6 }, propertyName: DriveToolProperties.speed.name },
+      { value: { value: this._manager.fov }, propertyName: DriveToolProperties.fov.name },
+      { value: { value: this._manager.progress }, propertyName: DriveToolProperties.progress.name },
+      { value: { value: this._manager.targetDistance }, propertyName: DriveToolProperties.targetDistance.name },
+    ]);
   }
 }

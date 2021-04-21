@@ -250,41 +250,6 @@ export class DriveToolManager {
   }
 
   /**
-   * Get the top left and bottom right corner of the detection zone
-   * @returns A object containing the Point2d of the top left corner and the bottom right corner of the
-   */
-  private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
-    if (!this._viewport)
-      return undefined;
-
-    const position = this.getPositionAtDistance(this._targetDistance);
-
-    if (!position)
-      return undefined;
-
-    const clientCenter3d = this._viewport.worldToView(position);
-    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
-
-    const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
-    const topLeft = clientCenter.minus(halfSide);
-    const bottomRight = clientCenter.plus(halfSide);
-    return { topLeft, bottomRight };
-  }
-
-  /**
-   * Get point on curve at distance from current position on curve
-   * @param distance
-   * @private
-   */
-  private getPositionAtDistance(distance: number): Point3d | undefined {
-    if (!this._selectedCurve)
-      return undefined;
-
-    const fraction = distance / this._selectedCurve.curveLength();
-    return this._selectedCurve.fractionToPoint(this._progress + fraction);
-  }
-
-  /**
    * Toggles display of the target
    */
   public toggleTarget(): void {
@@ -399,5 +364,40 @@ export class DriveToolManager {
       animationTime: this._intervalTime * 1000,
       easingFunction: Easing.Linear.None,
     });
+  }
+
+  /**
+   * Get the top left and bottom right corner of the detection zone
+   * @returns object containing the Point2d of the top left corner and the bottom right corner of the
+   */
+  private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
+    if (!this._viewport)
+      return undefined;
+
+    const position = this.getPositionAtDistance(this._targetDistance);
+
+    if (!position)
+      return undefined;
+
+    const clientCenter3d = this._viewport.worldToView(position);
+    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
+
+    const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
+    const topLeft = clientCenter.minus(halfSide);
+    const bottomRight = clientCenter.plus(halfSide);
+    return { topLeft, bottomRight };
+  }
+
+  /**
+   * Get point on curve at distance from current position on curve
+   * @param distance
+   * @private
+   */
+  private getPositionAtDistance(distance: number): Point3d | undefined {
+    if (!this._selectedCurve)
+      return undefined;
+
+    const fraction = distance / this._selectedCurve.curveLength();
+    return this._selectedCurve.fractionToPoint(this._progress + fraction);
   }
 }
