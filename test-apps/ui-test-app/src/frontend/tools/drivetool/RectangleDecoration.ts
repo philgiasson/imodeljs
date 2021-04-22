@@ -4,7 +4,10 @@
 *--------------------------------------------------------------------------------------------*/
 import { CanvasDecoration } from "@bentley/imodeljs-frontend";
 
-export class DetectionZoneDecoration implements CanvasDecoration {
+/**
+ * Canvas used to display a rectangle in the ViewPort
+ */
+export class RectangleDecoration implements CanvasDecoration {
   public x?: number;
   public y?: number;
   public w?: number;

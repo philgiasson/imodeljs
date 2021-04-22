@@ -17,8 +17,7 @@ import { Angle, CurveChainWithDistanceIndex, Point2d, Point3d, Vector3d } from "
 import { CustomRpcInterface, CustomRpcUtilities } from "../../../common/CustomRpcInterface";
 import { DriveToolConfig } from "./DriveToolConfig";
 import { DistanceDecoration } from "./DistanceDecoration";
-import { DistanceUtils } from "./DistanceUtils";
-import { DetectionZoneDecoration } from "./DetectionZoneDecoration";
+import { RectangleDecoration } from "./RectangleDecoration";
 import { ShapeUtils } from './ShapeUtils';
 
 export class DriveToolManager {
@@ -54,16 +53,17 @@ export class DriveToolManager {
   /** Id of the current movement interval */
   private _intervalId?: NodeJS.Timeout;
 
-  /** Indicates if target should be render */
+  /** Indicates if target should render */
   private _targetEnabled = false;
   /** Indicates if simulation should stop when the target is no longer visible */
   private _autoStopEnabled = false;
-  private _targetDistance = DriveToolConfig.targetDistance;
+  /** Distance of target from current position on curve */
+  private _targetDistance = DriveToolConfig.targetDistanceDefault;
   /** Id of the target */
   private _targetId?: string;
 
   constructor(private _distanceDecoration: DistanceDecoration,
-              private _detectionZoneDecoration: DetectionZoneDecoration) {
+              private _detectionZoneDecoration: RectangleDecoration) {
   }
 
   public get targetEnabled(): boolean {
@@ -82,7 +82,7 @@ export class DriveToolManager {
     return this._distanceDecoration;
   }
 
-  public get detectionZoneDecoration(): DetectionZoneDecoration {
+  public get detectionZoneDecoration(): RectangleDecoration {
     return this._detectionZoneDecoration;
   }
 
@@ -146,29 +146,6 @@ export class DriveToolManager {
 
   public set targetDistance(value: number) {
     this._targetDistance = value;
-  }
-
-  /**
-   * Calculate the position and the orientation with distance from position and of the target
-   * @returns array of Point3d representing target shape
-   */
-  public getTargetPoints(): Point3d[] {
-    if (!this._selectedCurve || !this._positionOnCurve)
-      return [new Point3d()];
-
-    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
-    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
-
-    if (!position)
-      return [new Point3d()];
-
-    const direction = position.minus(this._positionOnCurve);
-    const vectorDirection = Vector3d.createFrom(direction).normalize();
-
-    if (!vectorDirection)
-      return [new Point3d()];
-
-    return ShapeUtils.get2dOctagonPoints(vectorDirection, position, DriveToolConfig.targetHeight);
   }
 
   /**
@@ -251,23 +228,25 @@ export class DriveToolManager {
   }
 
   /**
-   * Get the top left and bottom right corner of the detection zone
-   * @returns A object containing the Point2d of the top left corner and the bottom right corner of the
+   * Calculate the position and the orientation with distance from position and of the target
+   * @returns array of Point3d representing target shape
    */
-  private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
-    if (!this._viewport || !this._selectedCurve)
-      return undefined;
+  public getTargetPoints(): Point3d[] {
+    if (!this._positionOnCurve)
+      return [new Point3d()];
 
-    const fraction = this._targetDistance / this._selectedCurve?.curveLength();
-    const position = this._selectedCurve?.fractionToPoint(this._progress + fraction);
+    const position = this.getPositionAtDistance(this._targetDistance);
 
-    const clientCenter3d = this._viewport.worldToView(position);
-    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
+    if (!position)
+      return [new Point3d()];
 
-    const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
-    const topLeft = clientCenter.minus(halfSide);
-    const bottomRight = clientCenter.plus(halfSide);
-    return { topLeft, bottomRight };
+    const direction = position.minus(this._positionOnCurve);
+    const vectorDirection = Vector3d.createFrom(direction).normalize();
+
+    if (!vectorDirection)
+      return [new Point3d()];
+
+    return ShapeUtils.getOctagonPoints(position, vectorDirection, DriveToolConfig.targetHeight);
   }
 
   /**
@@ -335,7 +314,7 @@ export class DriveToolManager {
   public updateMouseDecoration(mousePosition: Point3d, hit: HitDetail | undefined): void {
     this.distanceDecoration.mousePosition = mousePosition;
     if (this._positionOnCurve && hit) {
-      this.distanceDecoration.distance = DistanceUtils.calculateDistance(this._positionOnCurve, hit.getPoint());
+      this.distanceDecoration.distance = this._positionOnCurve.distance(hit.getPoint());
     } else {
       this.distanceDecoration.distance = 0;
     }
@@ -385,5 +364,40 @@ export class DriveToolManager {
       animationTime: this._intervalTime * 1000,
       easingFunction: Easing.Linear.None,
     });
+  }
+
+  /**
+   * Get the top left and bottom right corner of the detection zone
+   * @returns object containing the Point2d of the top left corner and the bottom right corner of the
+   */
+  private getDetectionZoneCorners(): { topLeft: Point2d, bottomRight: Point2d } | undefined {
+    if (!this._viewport)
+      return undefined;
+
+    const position = this.getPositionAtDistance(this._targetDistance);
+
+    if (!position)
+      return undefined;
+
+    const clientCenter3d = this._viewport.worldToView(position);
+    const clientCenter = new Point2d(Math.floor(clientCenter3d.x), Math.floor(clientCenter3d.y));
+
+    const halfSide = new Point3d(DriveToolConfig.detectionRectangleWidth / 2, DriveToolConfig.detectionRectangleHeight / 2, 0);
+    const topLeft = clientCenter.minus(halfSide);
+    const bottomRight = clientCenter.plus(halfSide);
+    return { topLeft, bottomRight };
+  }
+
+  /**
+   * Get point on curve at distance from current position on curve
+   * @param distance
+   * @private
+   */
+  private getPositionAtDistance(distance: number): Point3d | undefined {
+    if (!this._selectedCurve)
+      return undefined;
+
+    const fraction = distance / this._selectedCurve.curveLength();
+    return this._selectedCurve.fractionToPoint(this._progress + fraction);
   }
 }

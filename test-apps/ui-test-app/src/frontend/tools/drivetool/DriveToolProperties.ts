@@ -4,6 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 import { PropertyDescription } from "@bentley/ui-abstract";
 
+/**
+ * Specifies the UI properties provided by the drive tool
+ */
 export class DriveToolProperties {
   public static height: PropertyDescription = {name: "height", displayLabel: "Height (m)", typename: "number"};
   public static lateralOffset: PropertyDescription = {name: "lateralOffset", displayLabel: "Lateral Offset (m)", typename: "number"};
