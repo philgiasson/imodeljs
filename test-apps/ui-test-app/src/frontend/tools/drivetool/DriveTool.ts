@@ -15,7 +15,6 @@ import {
   ToolAssistanceImage,
 } from "@bentley/imodeljs-frontend";
 import { DriveToolManager } from "./DriveToolManager";
-import { DriveToolConfig } from "./DriveToolConfig";
 import { DialogItem, DialogPropertySyncItem } from "@bentley/ui-abstract";
 import { ToolItemDef } from "@bentley/ui-framework";
 import { DriveToolProperties } from "./DriveToolProperties";
@@ -48,6 +47,69 @@ export class DriveTool extends PrimitiveTool {
     return this._manager;
   }
 
+  /**
+   * Initializes tool
+   */
+  public onPostInstall() {
+    super.onPostInstall();
+    IModelApp.accuSnap.enableSnap(true);
+    void this._manager.init().then();
+    this.setupAndPromptForNextAction();
+  }
+
+  protected setupAndPromptForNextAction(): void {
+    this.provideToolAssistance();
+  }
+
+  public onUnsuspend(): void {
+    this.provideToolAssistance();
+  }
+
+  /**
+   * Provides the tool instructions.
+   * @protected
+   */
+  protected provideToolAssistance(): void {
+    const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
+
+    const toggleMovementInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
+    const reverseInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["R"]), "Reverse direction");
+    const speedInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["W", "S"]), "Adjust speed");
+    const heightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["Q", "E"]), "Adjust height");
+    const lateralOffsetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["A", "D"]), "Adjust lateral offset");
+    const toggleTargetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["L"]), "Toggle target");
+    const fovInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.MouseWheel, "Adjust Fov");
+
+    const section1 = ToolAssistance.createSection([toggleMovementInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction, toggleTargetInstruction]);
+    const instructions = ToolAssistance.createInstructions(mainInstruction, [section1]);
+    IModelApp.notifications.setToolAssistance(instructions);
+  }
+
+  /**
+   * Specifies that the tool does not require a non-read only model
+   */
+  public requireWriteableTarget(): boolean {
+    return false;
+  }
+
+  /**
+   * Supplies properties to the UI
+   */
+  public supplyToolSettingsProperties(): DialogItem[] | undefined {
+    const toolSettings = new Array<DialogItem>();
+    toolSettings.push({ value: { value: this._manager.height }, property: DriveToolProperties.height, editorPosition: { rowPriority: 1, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.lateralOffset }, property: DriveToolProperties.lateralOffset, editorPosition: { rowPriority: 2, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.speed * 3.6 }, property: DriveToolProperties.speed, editorPosition: { rowPriority: 3, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.fov }, property: DriveToolProperties.fov, editorPosition: { rowPriority: 4, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.progress }, property: DriveToolProperties.progress, editorPosition: { rowPriority: 5, columnIndex: 1 } });
+    toolSettings.push({ value: { value: this._manager.targetDistance }, property: DriveToolProperties.targetDistance, editorPosition: { rowPriority: 6, columnIndex: 1 } });
+    return toolSettings;
+  }
+
+  /**
+   * Handles properties values changed from the UI
+   * @param updatedValue
+   */
   public applyToolSettingPropertyChange(updatedValue: DialogPropertySyncItem): boolean {
     const value = updatedValue.value.value as number;
     switch (updatedValue.propertyName) {
@@ -62,32 +124,25 @@ export class DriveTool extends PrimitiveTool {
     return true;
   }
 
-  public supplyToolSettingsProperties(): DialogItem[] | undefined {
-    const toolSettings = new Array<DialogItem>();
-    toolSettings.push({ value: { value: this._manager.height }, property: DriveToolProperties.height, editorPosition: { rowPriority: 1, columnIndex: 1 } });
-    toolSettings.push({ value: { value: this._manager.lateralOffset }, property: DriveToolProperties.lateralOffset, editorPosition: { rowPriority: 2, columnIndex: 1 } });
-    toolSettings.push({ value: { value: this._manager.speed * 3.6 }, property: DriveToolProperties.speed, editorPosition: { rowPriority: 3, columnIndex: 1 } });
-    toolSettings.push({ value: { value: this._manager.fov }, property: DriveToolProperties.fov, editorPosition: { rowPriority: 4, columnIndex: 1 } });
-    toolSettings.push({ value: { value: this._manager.progress }, property: DriveToolProperties.progress, editorPosition: { rowPriority: 5, columnIndex: 1 } });
-    toolSettings.push({ value: { value: this._manager.targetDistance }, property: DriveToolProperties.targetDistance, editorPosition: { rowPriority: 6, columnIndex: 1 } });
-    return toolSettings;
+  /**
+   * Syncs properties with the UI when values have changed
+   * @private
+   */
+  private syncAllSettings() {
+    this.syncToolSettingsProperties([
+      { value: { value: this._manager.height }, propertyName: DriveToolProperties.height.name },
+      { value: { value: this._manager.lateralOffset }, propertyName: DriveToolProperties.lateralOffset.name },
+      { value: { value: this._manager.speed * 3.6 }, propertyName: DriveToolProperties.speed.name },
+      { value: { value: this._manager.fov }, propertyName: DriveToolProperties.fov.name },
+      { value: { value: this._manager.progress }, propertyName: DriveToolProperties.progress.name },
+      { value: { value: this._manager.targetDistance }, propertyName: DriveToolProperties.targetDistance.name },
+    ]);
   }
 
-  public requireWriteableTarget(): boolean {
-    return false;
-  }
-
-  public onPostInstall() {
-    super.onPostInstall();
-    IModelApp.accuSnap.enableSnap(true);
-    void this._manager.init().then();
-    this.setupAndPromptForNextAction();
-  }
-
-  public onUnsuspend(): void {
-    this.provideToolAssistance();
-  }
-
+  /**
+   * Setups tool decorations
+   * @param context decorate context
+   */
   public decorate(context: DecorateContext): void {
     context.addCanvasDecoration(this._manager.distanceDecoration);
 
@@ -106,26 +161,10 @@ export class DriveTool extends PrimitiveTool {
     }
   }
 
-  protected setupAndPromptForNextAction(): void {
-    this.provideToolAssistance();
-  }
-
-  protected provideToolAssistance(): void {
-    const mainInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.CursorClick, "Select an object");
-
-    const toggleMovementInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["T"]), "Toggle movement");
-    const reverseInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["R"]), "Reverse direction");
-    const speedInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["W", "S"]), "Adjust speed");
-    const heightInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["Q", "E"]), "Adjust height");
-    const lateralOffsetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["A", "D"]), "Adjust lateral offset");
-    const toggleTargetInstruction = ToolAssistance.createKeyboardInstruction(ToolAssistance.createKeyboardInfo(["L"]), "Toggle target");
-    const fovInstruction = ToolAssistance.createInstruction(ToolAssistanceImage.MouseWheel, "Adjust Fov");
-
-    const section1 = ToolAssistance.createSection([toggleMovementInstruction, reverseInstruction, speedInstruction, lateralOffsetInstruction, heightInstruction, fovInstruction, toggleTargetInstruction]);
-    const instructions = ToolAssistance.createInstructions(mainInstruction, [section1]);
-    IModelApp.notifications.setToolAssistance(instructions);
-  }
-
+  /**
+   * Tries to set the clicked element as the selected curve
+   * @param ev mouse button down event
+   */
   public async onDataButtonDown(ev: BeButtonEvent): Promise<EventHandled> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
     if (hit?.sourceId) {
@@ -133,6 +172,7 @@ export class DriveTool extends PrimitiveTool {
     }
     return EventHandled.Yes;
   }
+
 
   /**
    * Delegates the event to the input manager
@@ -144,7 +184,6 @@ export class DriveTool extends PrimitiveTool {
     return EventHandled.Yes;
   }
 
-
   /**
    * Delegates the event to the input manager
    * @param ev mouse wheel scroll event
@@ -154,34 +193,37 @@ export class DriveTool extends PrimitiveTool {
     return EventHandled.Yes;
   }
 
+  /**
+   * Locates the element under the mouse then updates the mouse decoration.
+   * @param ev mouse motion event
+   */
   public async onMouseMotion(ev: BeButtonEvent): Promise<void> {
     const hit = await IModelApp.locateManager.doLocate(new LocateResponse(), true, ev.point, ev.viewport, ev.inputSource);
     this._manager.updateMouseDecoration(ev.viewPoint, hit);
   }
 
+  /**
+   * Reinitializes the tool
+   * @param _ev
+   */
   public async onResetButtonUp(_ev: BeButtonEvent): Promise<EventHandled> {
     this.onReinitialize();
     return EventHandled.No;
   }
 
+  /**
+   * Stops tool movement when exiting the tool
+   */
   public onCleanup(): void {
     this._manager.stop();
   }
 
+  /**
+   * Handles tool restart
+   */
   public onRestartTool(): void {
     const tool = new DriveTool();
     if (!tool.run())
       this.exitTool();
-  }
-
-  private syncAllSettings() {
-    this.syncToolSettingsProperties([
-      { value: { value: this._manager.height }, propertyName: DriveToolProperties.height.name },
-      { value: { value: this._manager.lateralOffset }, propertyName: DriveToolProperties.lateralOffset.name },
-      { value: { value: this._manager.speed * 3.6 }, propertyName: DriveToolProperties.speed.name },
-      { value: { value: this._manager.fov }, propertyName: DriveToolProperties.fov.name },
-      { value: { value: this._manager.progress }, propertyName: DriveToolProperties.progress.name },
-      { value: { value: this._manager.targetDistance }, propertyName: DriveToolProperties.targetDistance.name },
-    ]);
   }
 }
