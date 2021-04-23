@@ -134,21 +134,23 @@ export class DriveTool extends PrimitiveTool {
     return EventHandled.Yes;
   }
 
+  /**
+   * Delegates the event to the input manager
+   * @param wentDown
+   * @param keyEvent
+   */
   public async onKeyTransition(wentDown: boolean, keyEvent: KeyboardEvent): Promise<EventHandled> {
-    this._inputManager.handleKeyTransition(wentDown, keyEvent.key, () => {this.syncAllSettings()});
+    this._inputManager.handleKeyTransition(wentDown, keyEvent.key, () => { this.syncAllSettings(); });
     return EventHandled.Yes;
   }
 
+
   /**
-   * Handle onMouseWheel events to prevent zooming while using tool.
+   * Delegates the event to the input manager
+   * @param ev mouse wheel scroll event
    */
-  public async onMouseWheel(_ev: BeWheelEvent): Promise<EventHandled> {
-    if (_ev.wheelDelta > 0) {
-      this._manager.fov -= DriveToolConfig.fovStep * 5;
-    } else if (_ev.wheelDelta < 0) {
-      this._manager.fov += DriveToolConfig.fovStep * 5;
-    }
-    this.syncAllSettings();
+  public async onMouseWheel(ev: BeWheelEvent): Promise<EventHandled> {
+    this._inputManager.handleMouseWheel(ev, () => { this.syncAllSettings(); });
     return EventHandled.Yes;
   }
 

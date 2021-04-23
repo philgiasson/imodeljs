@@ -2,6 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
+import { BeWheelEvent } from "@bentley/imodeljs-frontend";
 import { DriveToolManager } from "./DriveToolManager";
 import { DriveToolConfig } from "./DriveToolConfig";
 
@@ -19,7 +20,7 @@ export class DriveToolInputManager {
    * @param key that was pressed
    * @param callback function to call when a value was modified
    */
-  public handleKeyTransition(wentDown: boolean, key: string, callback: () => void) {
+  public handleKeyTransition(wentDown: boolean, key: string, callback: () => void): void {
     if (this._keyIntervalId) {
       clearTimeout(this._keyIntervalId);
     }
@@ -73,5 +74,19 @@ export class DriveToolInputManager {
 
       }
     }
+  }
+
+  /**
+   * Handles onMouseWheel events to change fov value
+   * @param ev mouse wheel scroll event
+   * @param callback function to call when data is modified
+   */
+  public handleMouseWheel(ev: BeWheelEvent, callback: () => void): void {
+    if (ev.wheelDelta > 0) {
+      this._manager.fov -= DriveToolConfig.fovStep;
+    } else if (ev.wheelDelta < 0) {
+      this._manager.fov += DriveToolConfig.fovStep;
+    }
+    callback();
   }
 }
