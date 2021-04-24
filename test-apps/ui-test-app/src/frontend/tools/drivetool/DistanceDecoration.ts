@@ -2,11 +2,14 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { CanvasDecoration, IModelApp, QuantityType } from '@bentley/imodeljs-frontend';
+import { CanvasDecoration, IModelApp, QuantityType } from "@bentley/imodeljs-frontend";
 import { Point3d } from "@bentley/geometry-core";
-import { FormatterSpec } from '@bentley/imodeljs-quantity';
+import { FormatterSpec } from "@bentley/imodeljs-quantity";
 
-export class DistanceDisplayDecoration implements CanvasDecoration {
+/**
+ * Decoration that displays a formatted distance beside the cursor
+ */
+export class DistanceDecoration implements CanvasDecoration {
 
   public mousePosition = Point3d.createZero();
   public distance = 0;
@@ -20,7 +23,7 @@ export class DistanceDisplayDecoration implements CanvasDecoration {
 
 
   constructor() {
-    IModelApp.quantityFormatter.getFormatterSpecByQuantityType(QuantityType.LengthEngineering)
+    IModelApp.quantityFormatter?.getFormatterSpecByQuantityType(QuantityType.LengthEngineering)
       .then((formatter) => { this._formatter = formatter; });
   }
 
@@ -36,7 +39,7 @@ export class DistanceDisplayDecoration implements CanvasDecoration {
       ctx.textBaseline = "middle";
       ctx.font = "14px sans-serif";
       ctx.fillStyle = "white";
-      let formattedDistance = "placeholder";
+      let formattedDistance = "";
       if (this._formatter) {
         formattedDistance = IModelApp.quantityFormatter.formatQuantity(this.distance, this._formatter);
       }

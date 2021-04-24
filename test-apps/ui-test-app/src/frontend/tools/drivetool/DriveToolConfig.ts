@@ -5,6 +5,8 @@
 
 export class DriveToolConfig {
 
+  public static intervalTime = 0.5;
+
   public static heightMin = 0.1;
   public static heightMax = 5;
   public static heightStep = 0.1;
@@ -20,8 +22,14 @@ export class DriveToolConfig {
   public static speedStep = 1;
   public static speedDefault = 100 / 3.6;
 
-  public static fovMin = 1;
-  public static fovMax = 179;
-  public static fovStep = 1;
+  public static fovMin = 5;
+  public static fovMax = 175;
+  public static fovStep = 5;
   public static fovDefault = 75;
+
+  public static detectionRectangleWidth = 100;
+  public static detectionRectangleHeight = 100;
+
+  public static targetDistanceDefault = 200;
+  public static targetHeight = 3;
 }
