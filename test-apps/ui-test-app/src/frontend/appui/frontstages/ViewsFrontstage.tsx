@@ -47,6 +47,7 @@ import { VisibilityWidgetControl } from "../widgets/VisibilityWidget";
 import { NestedAnimationStage } from "./NestedAnimationStage";
 import { MapLayersWidgetControl } from "@bentley/map-layers"; // used to test map-layers widget control
 import { ToolWithDynamicSettings } from "../../tools/ToolWithDynamicSettings";
+import { DriveTool } from "../../tools/drivetool/DriveTool";
 
 /* eslint-disable react/jsx-key */
 
@@ -735,6 +736,7 @@ class AdditionalTools {
     // ToolbarHelper.createToolbarItemFromItemDef(0, CoreTools.keyinBrowserButtonItemDef, { groupPriority: -10 }),
     ToolbarHelper.createToolbarItemFromItemDef(0, CoreTools.keyinPaletteButtonItemDef, { groupPriority: -10 }),
     ToolbarHelper.createToolbarItemFromItemDef(5, this._openNestedAnimationStage, { groupPriority: -10 }),
+    ToolbarHelper.createToolbarItemFromItemDef(110, DriveTool.driveToolItemDef, { groupPriority: 20 }),
     ToolbarHelper.createToolbarItemFromItemDef(115, AppTools.tool1, { groupPriority: 20 }),
     ToolbarHelper.createToolbarItemFromItemDef(120, AppTools.tool2, { groupPriority: 20 }),
     ToolbarHelper.createToolbarItemFromItemDef(125, this._viewportPopupButtonItemDef, { groupPriority: 20 }),

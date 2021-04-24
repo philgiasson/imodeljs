@@ -29,7 +29,10 @@
     "url": "http://www.bentley.com"
   },
   "//dependencies": "NOTE: dependencies will be empty here and instead specified in each package.",
-  "dependencies": {},
   "//devDependencies": "NOTE: devDependencies will be empty here and instead specified in each package.",
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/jest": "^26.0.22",
+    "chai": "^4.3.4",
+    "mocha": "^8.3.2"
+  }
 }

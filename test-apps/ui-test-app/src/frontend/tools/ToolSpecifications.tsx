@@ -154,6 +154,7 @@ class AppItemsProvider implements UiItemsProvider {
 UiItemsManager.register(new AppItemsProvider());
 
 export class AppTools {
+
   public static get tool1() {
     return new ToolItemDef({
       toolId: Tool1.toolId,
